@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATALOGO, MARCAS_CATALOGO } from "@/lib/catalogo";
 import { formatCLP } from "@/lib/utils";
@@ -33,9 +34,22 @@ function CardMoto({ moto }: { moto: Moto }) {
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ scale: 1.02, y: -4 }}
-      className="group overflow-hidden rounded-xl border border-line bg-surface-2 transition-shadow duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+      className="group relative overflow-hidden rounded-xl border border-line bg-surface-2 transition-shadow duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
       style={{ willChange: "transform" }}
     >
+      {/*
+        Enlace a la página de detalle: cubre foto + info.
+        El botón de WhatsApp queda ENCIMA con position:relative + z-index,
+        rompiendo el flujo del <a> envolvente para evitar <a> anidados.
+      */}
+      <Link
+        href={`/modelo/${moto.id}`}
+        className="absolute inset-0 z-0"
+        aria-label={`Ver detalle de ${moto.marca} ${moto.modelo}`}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+
       {/* Foto sobre fondo sólido muteado de la marca */}
       <div
         className="relative flex aspect-[4/3] items-center justify-center overflow-hidden"
@@ -60,11 +74,18 @@ function CardMoto({ moto }: { moto: Moto }) {
         )}
       </div>
 
-      <div className="p-6">
+      <div className="relative z-10 p-6">
         <p className="label-mono mb-1 !text-[11px]">{moto.marca}</p>
-        <h3 className="font-display text-2xl font-bold uppercase text-white">
-          {moto.modelo}
-        </h3>
+        {/* h3 visible; el enlace real está en el overlay absoluto */}
+        <Link
+          href={`/modelo/${moto.id}`}
+          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+          aria-label={`Ver detalle de ${moto.marca} ${moto.modelo}`}
+        >
+          <h3 className="font-display text-2xl font-bold uppercase text-white transition-colors duration-200 group-hover:text-red-400">
+            {moto.modelo}
+          </h3>
+        </Link>
 
         {/* Specs número/label en 2 columnas */}
         <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-line pt-4">
@@ -100,14 +121,16 @@ function CardMoto({ moto }: { moto: Moto }) {
           )}
         </div>
 
+        {/* Botón WhatsApp — z-10 para quedar sobre el overlay, nunca dentro de otro <a> */}
         <motion.a
           href={linkWhatsApp(mensajeCotizacion(moto))}
           target="_blank"
           rel="noopener noreferrer"
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-red-500 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+          className="relative z-10 mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-red-500 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
           aria-label={`Cotizar ${moto.marca} ${moto.modelo} por WhatsApp`}
+          onClick={(e) => e.stopPropagation()}
         >
           Cotizar
         </motion.a>
