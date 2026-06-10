@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { linkWhatsApp, MENSAJE_WSP_GENERICO, NEGOCIO } from "@/lib/config";
+import MegaMenuMotos from "./MegaMenuMotos";
 
+/* Links que NO son "Motos" — "Catálogo" es reemplazado por el botón del megamenú */
 const LINKS = [
-  { etiqueta: "Catálogo", href: "#catalogo" },
   { etiqueta: "Royal Enfield", href: "#royal-enfield" },
   { etiqueta: "Suzuki", href: "#suzuki" },
   { etiqueta: "Financiamiento", href: "#financiamiento" },
@@ -15,12 +16,17 @@ const LINKS = [
 export default function Nav() {
   const [conScroll, setConScroll] = useState(false);
   const [drawerAbierto, setDrawerAbierto] = useState(false);
+  const [motosAbierto, setMotosAbierto] = useState(false);
 
   useEffect(() => {
     let raf = 0;
     const alScroll = () => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => setConScroll(window.scrollY > 80));
+      raf = requestAnimationFrame(() => {
+        setConScroll(window.scrollY > 80);
+        /* Cerrar megamenú al hacer scroll */
+        setMotosAbierto(false);
+      });
     };
     alScroll();
     window.addEventListener("scroll", alScroll, { passive: true });
@@ -66,6 +72,20 @@ export default function Nav() {
 
         {/* Links desktop */}
         <nav className="hidden items-center gap-8 lg:flex" aria-label="Secciones">
+          {/* Botón Motos — abre el megamenú */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={motosAbierto}
+            onClick={() => setMotosAbierto((v) => !v)}
+            className={`relative text-sm font-medium transition-colors duration-200 after:absolute after:bottom-[-2px] after:left-0 after:h-px after:w-full after:origin-left after:bg-white after:transition-transform after:duration-300 hover:text-white hover:after:scale-x-100 ${
+              motosAbierto
+                ? "text-white after:scale-x-100"
+                : "text-muted after:scale-x-0"
+            }`}
+          >
+            Motos
+          </button>
           {LINKS.map((link) => (
             <a
               key={link.href}
@@ -95,7 +115,10 @@ export default function Nav() {
             type="button"
             aria-label={drawerAbierto ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={drawerAbierto}
-            onClick={() => setDrawerAbierto((v) => !v)}
+            onClick={() => {
+              setDrawerAbierto((v) => !v);
+              setMotosAbierto(false);
+            }}
             className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-md lg:hidden"
           >
             <span
@@ -116,6 +139,12 @@ export default function Nav() {
           </button>
         </div>
       </div>
+
+      {/* Megamenú Motos (solo desktop) */}
+      <MegaMenuMotos
+        abierto={motosAbierto}
+        onCerrar={() => setMotosAbierto(false)}
+      />
 
       {/* Drawer mobile */}
       <AnimatePresence>
