@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger, prefiereMenosMovimiento } from "@/lib/gsap-setup";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { gsap, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 import { linkWhatsApp } from "@/lib/config";
+
+// ─── Tipos ──────────────────────────────────────────────────────────────────
 
 type Spec = { valor: string; unidad: string; label: string };
 type Modelo = {
@@ -18,8 +21,9 @@ type Modelo = {
   precioDesde: string;
 };
 
-// Showcase cinemático tipo Zero — una moto por pantalla, specs enormes.
-const MODELOS_SHOWCASE: Modelo[] = [
+// ─── Datos ───────────────────────────────────────────────────────────────────
+
+const MODELOS: Modelo[] = [
   {
     id: "gsx-r1000r",
     marca: "Suzuki",
@@ -102,225 +106,393 @@ const MODELOS_SHOWCASE: Modelo[] = [
   },
 ];
 
-const MENSAJE_HERMANOS = (m: Modelo) =>
+const N = MODELOS.length;
+
+const MENSAJE = (m: Modelo) =>
   `Hola! Vi la ${m.marca} ${m.nombre} en la web de Red Motos y quiero más info. ¿Me cotizan?`;
 
-function ModeloSection({ modelo, index }: { modelo: Modelo; index: number }) {
-  const sectionRef = useRef<HTMLElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const nombreRef = useRef<HTMLHeadingElement>(null);
-  const hermanosRef = useRef<HTMLUListElement>(null);
-  const lineaRef = useRef<HTMLSpanElement>(null);
-  const valoresRef = useRef<(HTMLSpanElement | null)[]>([]);
+// ─── Animaciones (Framer Motion) ─────────────────────────────────────────────
+
+const motoVariants = {
+  enter: { x: -60, opacity: 0 },
+  center: { x: 0, opacity: 1, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.22, ease: "easeIn" } },
+};
+
+const panelVariants = {
+  enter: { y: 28, opacity: 0 },
+  center: { y: 0, opacity: 1, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
+};
+
+// ─── Subcomponente: specs con count-up GSAP ──────────────────────────────────
+
+function SpecsCountUp({
+  specs,
+  acento,
+  reducida,
+}: {
+  specs: Spec[];
+  acento: string;
+  reducida: boolean;
+}) {
+  const refs = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
-    const seccion = sectionRef.current;
-    if (!seccion) return;
-
-    // Accesibilidad: sin animación, todo visible de inmediato.
-    if (prefiereMenosMovimiento()) {
-      valoresRef.current.forEach((el, i) => {
-        if (el) el.textContent = modelo.specs[i].valor;
+    if (reducida) {
+      // Sin animación: mostrar valor final directo.
+      refs.current.forEach((el, i) => {
+        if (el) el.textContent = specs[i]?.valor ?? "";
       });
       return;
     }
 
     const ctx = gsap.context(() => {
-      const elementos = [
-        imgRef.current,
-        nombreRef.current,
-        hermanosRef.current,
-        lineaRef.current,
-      ].filter(Boolean) as Element[];
-      gsap.set(elementos, { autoAlpha: 0 });
-
-      ScrollTrigger.create({
-        trigger: seccion,
-        start: "top 55%",
-        once: true,
-        onEnter: () => {
-          const tl = gsap.timeline();
-          tl.to(imgRef.current, {
-            autoAlpha: 1,
-            x: 0,
-            duration: 0.8,
-            ease: "expo.out",
-            startAt: { x: -80 },
-          })
-            .to(
-              nombreRef.current,
-              { autoAlpha: 1, y: 0, duration: 0.6, ease: "expo.out", startAt: { y: 24 } },
-              "-=0.45",
-            )
-            .to(
-              hermanosRef.current,
-              { autoAlpha: 1, y: 0, duration: 0.5, ease: "expo.out", startAt: { y: -16 } },
-              "-=0.3",
-            )
-            .to(
-              lineaRef.current,
-              {
-                autoAlpha: 1,
-                scaleX: 1,
-                duration: 0.6,
-                ease: "power3.out",
-                transformOrigin: "left",
-                startAt: { scaleX: 0 },
-              },
-              "-=0.4",
-            );
-
-          // Count-up de cada spec.
-          modelo.specs.forEach((spec, i) => {
-            const destino = parseFloat(spec.valor);
-            const contador = { val: 0 };
-            gsap.to(contador, {
-              val: destino,
-              duration: 1.2,
-              ease: "power2.out",
-              delay: 0.3 + i * 0.1,
-              onUpdate: () => {
-                const el = valoresRef.current[i];
-                if (el) el.textContent = Math.round(contador.val).toString();
-              },
-            });
-          });
-        },
+      specs.forEach((spec, i) => {
+        const destino = parseFloat(spec.valor);
+        const contador = { val: 0 };
+        gsap.to(contador, {
+          val: destino,
+          duration: 1.2,
+          ease: "power2.out",
+          delay: i * 0.1,
+          onUpdate: () => {
+            const el = refs.current[i];
+            if (el) el.textContent = Math.round(contador.val).toString();
+          },
+        });
       });
-    }, seccion);
+    });
 
     return () => ctx.revert();
-  }, [modelo]);
+  // Solo re-corre cuando cambia el modelo (acento cambia con el modelo).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acento, reducida]);
 
   return (
-    <section
-      ref={sectionRef}
-      aria-label={`${modelo.marca} ${modelo.nombre}`}
-      className="sticky top-0 min-h-dvh overflow-hidden"
-      style={{ backgroundColor: modelo.bg, zIndex: index + 1 }}
-    >
-      {/* Barra lateral: línea + familia rotada (desktop) */}
-      <div
-        aria-hidden="true"
-        className="absolute left-6 top-1/2 hidden -translate-y-1/2 items-center gap-4 lg:flex"
-        style={{ writingMode: "vertical-rl" }}
-      >
-        <span className="h-24 w-px bg-white/20" />
-        <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/40">
-          {modelo.familia}
-        </span>
-      </div>
-
-      <div className="mx-auto flex min-h-dvh max-w-7xl flex-col items-center gap-8 px-6 py-24 md:grid md:grid-cols-2 md:items-center md:gap-4 md:px-12">
-        {/* Moto */}
-        <div className="order-1 flex w-full items-center justify-center md:justify-start">
-          <img
-            ref={imgRef}
-            src={modelo.img}
-            alt={`${modelo.marca} ${modelo.nombre}`}
-            width={640}
-            height={427}
-            loading={index === 0 ? "eager" : "lazy"}
-            className="w-full max-w-[420px] object-contain md:max-w-[560px]"
-            style={{ filter: `drop-shadow(0 30px 70px ${modelo.acento}44) drop-shadow(0 8px 24px rgba(0,0,0,0.6))` }}
-          />
-        </div>
-
-        {/* Texto */}
-        <div className="order-2 flex w-full flex-col md:items-end md:text-right">
-          <span
-            className="font-mono text-[11px] uppercase tracking-[0.3em]"
-            style={{ color: modelo.acento }}
+    <dl className="grid grid-cols-3 gap-4 md:gap-6">
+      {specs.map((spec, i) => (
+        <div key={spec.label} className="flex flex-col md:items-end">
+          <dd
+            className="font-display font-extrabold leading-none"
+            style={{ fontSize: "clamp(40px, 5.5vw, 80px)", color: acento }}
           >
-            {modelo.marca}
-          </span>
-
-          <h2
-            ref={nombreRef}
-            className="headline-display mt-3 leading-[0.85] text-white"
-            style={{ fontSize: "clamp(56px, 9vw, 132px)" }}
-          >
-            {modelo.nombre}
-          </h2>
-
-          {/* Hermanos */}
-          <ul
-            ref={hermanosRef}
-            aria-label="Otros modelos de la familia"
-            className="mt-5 flex flex-col gap-1 md:items-end"
-          >
-            {modelo.hermanos.map((h, i) => (
-              <li
-                key={h}
-                className="headline-display text-white/20 transition-opacity duration-200 hover:text-white/45"
-                style={{ fontSize: `${Math.max(20, 52 - i * 10)}px`, lineHeight: 1.05 }}
-              >
-                {h}
-              </li>
-            ))}
-          </ul>
-
-          {/* Specs */}
-          <div className="mt-10 w-full">
+            <span ref={(el) => { refs.current[i] = el; }}>{spec.valor}</span>
             <span
-              ref={lineaRef}
-              aria-hidden="true"
-              className="mb-5 block h-px w-full"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-            />
-            <dl className="grid grid-cols-3 gap-4 md:gap-6">
-              {modelo.specs.map((spec, i) => (
-                <div key={spec.label} className="flex flex-col md:items-end">
-                  <dd
-                    className="font-display font-extrabold leading-none"
-                    style={{ fontSize: "clamp(40px, 5.5vw, 80px)", color: modelo.acento }}
-                  >
-                    <span ref={(el) => { valoresRef.current[i] = el; }}>{spec.valor}</span>
-                    <span
-                      className="ml-1 font-mono text-[clamp(12px,1.4vw,18px)] font-medium uppercase tracking-wider"
-                      style={{ color: modelo.acento }}
-                    >
-                      {spec.unidad}
-                    </span>
-                  </dd>
-                  <dt className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-white/45">
-                    {spec.label}
-                  </dt>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          {/* Precio + CTA */}
-          <div className="mt-9 flex w-full flex-col gap-3 md:items-end">
-            <p className="text-sm text-white/50">
-              Desde <span className="font-medium text-white/80">{modelo.precioDesde}</span>{" "}
-              <span className="font-mono text-[11px] uppercase tracking-wider text-white/35">
-                [referencial]
-              </span>
-            </p>
-            <a
-              href={linkWhatsApp(MENSAJE_HERMANOS(modelo))}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[48px] items-center justify-center rounded-md px-8 text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.03]"
-              style={{ backgroundColor: modelo.acento }}
+              className="ml-1 font-mono text-[clamp(12px,1.4vw,18px)] font-medium uppercase tracking-wider"
+              style={{ color: acento }}
             >
-              Cotizar {modelo.nombre}
-            </a>
-          </div>
+              {spec.unidad}
+            </span>
+          </dd>
+          <dt className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-white/45">
+            {spec.label}
+          </dt>
         </div>
-      </div>
-    </section>
+      ))}
+    </dl>
   );
 }
 
-export default function ShowcasePremium() {
+// ─── Subcomponente: panel de texto (nombre, hermanos, specs, precio, CTA) ────
+
+function PanelModelo({
+  modelo,
+  reducida,
+  className = "",
+}: {
+  modelo: Modelo;
+  reducida: boolean;
+  className?: string;
+}) {
   return (
-    <section aria-label="Modelos destacados" className="relative bg-black">
-      {MODELOS_SHOWCASE.map((modelo, i) => (
-        <ModeloSection key={modelo.id} modelo={modelo} index={i} />
+    <div className={`flex w-full flex-col ${className}`}>
+      {/* Marca */}
+      <span
+        className="font-mono text-[11px] uppercase tracking-[0.3em]"
+        style={{ color: modelo.acento }}
+      >
+        {modelo.marca}
+      </span>
+
+      {/* Nombre */}
+      <h2
+        className="headline-display mt-3 leading-[0.85] text-white"
+        style={{ fontSize: "clamp(56px, 9vw, 132px)" }}
+      >
+        {modelo.nombre}
+      </h2>
+
+      {/* Hermanos fantasma */}
+      <ul
+        aria-label="Otros modelos de la familia"
+        className="mt-5 flex flex-col gap-1 md:items-end"
+      >
+        {modelo.hermanos.map((h, i) => (
+          <li
+            key={h}
+            className="headline-display text-white/20 transition-opacity duration-200 hover:text-white/45"
+            style={{ fontSize: `${Math.max(20, 52 - i * 10)}px`, lineHeight: 1.05 }}
+          >
+            {h}
+          </li>
+        ))}
+      </ul>
+
+      {/* Línea divisoria + specs */}
+      <div className="mt-10 w-full">
+        <span
+          aria-hidden="true"
+          className="mb-5 block h-px w-full"
+          style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+        />
+        <SpecsCountUp specs={modelo.specs} acento={modelo.acento} reducida={reducida} />
+      </div>
+
+      {/* Precio + CTA */}
+      <div className="mt-9 flex w-full flex-col gap-3 md:items-end">
+        <p className="text-sm text-white/50">
+          Desde <span className="font-medium text-white/80">{modelo.precioDesde}</span>{" "}
+          <span className="font-mono text-[11px] uppercase tracking-wider text-white/35">
+            [referencial]
+          </span>
+        </p>
+        <a
+          href={linkWhatsApp(MENSAJE(modelo))}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-[48px] items-center justify-center rounded-md px-8 text-sm font-semibold text-white transition-transform duration-200 hover:scale-[1.03] active:scale-[0.97]"
+          style={{ backgroundColor: modelo.acento }}
+        >
+          Cotizar {modelo.nombre}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── Desktop: un pin, fondo fijo, swap de moto ───────────────────────────────
+
+function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [indice, setIndice] = useState(0);
+
+  // Calcular índice activo según scroll (misma técnica que Hero.tsx).
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const el = wrapperRef.current;
+        if (!el) return;
+        const { top, height } = el.getBoundingClientRect();
+        const winH = window.innerHeight;
+        const denom = height - winH || 1;
+        const progress = Math.max(0, Math.min(1, -top / denom));
+        const idx = Math.min(N - 1, Math.floor(progress * N));
+        setIndice(idx);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const modelo = MODELOS[indice];
+
+  return (
+    /* Contenedor exterior tall que da el scroll space */
+    <div ref={wrapperRef} style={{ height: `${N * 100}vh` }} className="relative">
+      {/* Contenedor sticky — fondo CONSTANTE */}
+      <div
+        className="sticky top-0 h-dvh overflow-hidden bg-black"
+        style={{
+          /* Tinte de acento extremadamente sutil: 4% de opacidad, transición lenta */
+          background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${modelo.acento}0a 0%, transparent 70%), #0A0A0A`,
+          transition: reducida ? "none" : "background 0.6s ease",
+        }}
+      >
+        {/* Grano de textura */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+            backgroundSize: "180px 180px",
+          }}
+        />
+
+        {/* Barra lateral: línea + familia rotada */}
+        <div
+          aria-hidden="true"
+          className="absolute left-6 top-1/2 hidden -translate-y-1/2 items-center gap-4 lg:flex"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          <span className="h-24 w-px bg-white/20" />
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={`familia-${modelo.id}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.4, ease: "easeOut" } }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/40"
+            >
+              {modelo.familia}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
+        {/* Indicador de progreso: número de modelo (01 / 05) */}
+        <div
+          aria-hidden="true"
+          className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-2 lg:flex"
+        >
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={`idx-${indice}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } }}
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+              className="font-mono text-[11px] tabular-nums text-white/60"
+            >
+              {String(indice + 1).padStart(2, "0")}
+            </motion.span>
+          </AnimatePresence>
+          <span className="h-px w-5 bg-white/20" />
+          <span className="font-mono text-[11px] tabular-nums text-white/20">
+            {String(N).padStart(2, "0")}
+          </span>
+        </div>
+
+        {/* Layout principal: moto izquierda / texto derecha */}
+        <div className="mx-auto flex h-full max-w-7xl items-center gap-8 px-12 md:grid md:grid-cols-2 md:gap-4">
+          {/* Moto — crossfade con AnimatePresence */}
+          <div className="flex w-full items-center justify-start">
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={`moto-${modelo.id}`}
+                src={modelo.img}
+                alt={`${modelo.marca} ${modelo.nombre}`}
+                width={640}
+                height={427}
+                variants={reducida ? undefined : motoVariants}
+                initial={reducida ? undefined : "enter"}
+                animate={reducida ? undefined : "center"}
+                exit={reducida ? undefined : "exit"}
+                className="w-full max-w-[560px] object-contain"
+                style={{
+                  filter: `drop-shadow(0 30px 70px ${modelo.acento}55) drop-shadow(0 8px 24px rgba(0,0,0,0.6))`,
+                }}
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Panel de texto — swap con AnimatePresence */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`panel-${modelo.id}`}
+              variants={reducida ? undefined : panelVariants}
+              initial={reducida ? undefined : "enter"}
+              animate={reducida ? undefined : "center"}
+              exit={reducida ? undefined : "exit"}
+              className="flex w-full justify-end"
+            >
+              <PanelModelo
+                modelo={modelo}
+                reducida={reducida}
+                className="md:items-end md:text-right"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile: apilado vertical, reveal suave por tarjeta ──────────────────────
+
+function ShowcaseMobile({ reducida }: { reducida: boolean }) {
+  return (
+    <div className="flex flex-col gap-0 bg-black">
+      {MODELOS.map((modelo) => (
+        <motion.article
+          key={modelo.id}
+          aria-label={`${modelo.marca} ${modelo.nombre}`}
+          initial={reducida ? { opacity: 1 } : { opacity: 0, y: 40 }}
+          whileInView={reducida ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-15%" }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="relative overflow-hidden px-5 py-16"
+          style={{
+            background: `radial-gradient(ellipse 90% 50% at 50% 0%, ${modelo.acento}0d 0%, transparent 70%), #0A0A0A`,
+          }}
+        >
+          {/* Separador superior */}
+          <span
+            aria-hidden="true"
+            className="mb-10 block h-px w-full"
+            style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+          />
+
+          {/* Moto */}
+          <img
+            src={modelo.img}
+            alt={`${modelo.marca} ${modelo.nombre}`}
+            width={560}
+            height={373}
+            loading="lazy"
+            className="mx-auto mb-8 w-full max-w-[360px] object-contain"
+            style={{
+              filter: `drop-shadow(0 20px 50px ${modelo.acento}44) drop-shadow(0 4px 16px rgba(0,0,0,0.6))`,
+            }}
+          />
+
+          {/* Familia */}
+          <span
+            className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/40"
+          >
+            {modelo.familia}
+          </span>
+
+          {/* Panel */}
+          <PanelModelo modelo={modelo} reducida={reducida} />
+        </motion.article>
       ))}
+    </div>
+  );
+}
+
+// ─── Componente raíz ─────────────────────────────────────────────────────────
+
+export default function ShowcasePremium() {
+  const [reducida, setReducida] = useState(false);
+
+  // Suscribirse a prefers-reduced-motion de forma reactiva.
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReducida(mq.matches);
+    sync();
+    // Inicializar también con la función utilitaria (consistencia con el resto del repo).
+    if (prefiereMenosMovimiento()) setReducida(true);
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return (
+    <section aria-label="Modelos destacados" className="relative">
+      {/* Desktop (≥768px): un pin, fondo fijo, swap de moto */}
+      <div className="hidden md:block">
+        <ShowcaseDesktop reducida={reducida} />
+      </div>
+
+      {/* Mobile (<768px): apilado vertical, sin pin */}
+      <div className="block md:hidden">
+        <ShowcaseMobile reducida={reducida} />
+      </div>
     </section>
   );
 }
