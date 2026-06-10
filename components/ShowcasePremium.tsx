@@ -310,9 +310,8 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
       <div
         className="sticky top-0 h-dvh overflow-hidden bg-black"
         style={{
-          /* Tinte de acento extremadamente sutil: 4% de opacidad, transición lenta */
-          background: `radial-gradient(ellipse 80% 60% at 50% 50%, ${modelo.acento}0a 0%, transparent 70%), #0A0A0A`,
-          transition: reducida ? "none" : "background 0.6s ease",
+          /* Fondo CONSTANTE 100% plano — solo cambia la moto, nunca el fondo. */
+          background: "#0A0A0A",
         }}
       >
         {/* Grano de textura */}
@@ -426,10 +425,7 @@ function ShowcaseMobile({ reducida }: { reducida: boolean }) {
           whileInView={reducida ? { opacity: 1 } : { opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-15%" }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative overflow-hidden px-5 py-16"
-          style={{
-            background: `radial-gradient(ellipse 90% 50% at 50% 0%, ${modelo.acento}0d 0%, transparent 70%), #0A0A0A`,
-          }}
+          className="relative overflow-hidden bg-black px-5 py-16"
         >
           {/* Separador superior */}
           <span
