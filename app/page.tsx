@@ -1,6 +1,7 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ShowcasePremium from "@/components/ShowcasePremium";
+import GiroBeneficios from "@/components/GiroBeneficios";
 import Marcas from "@/components/Marcas";
 import Catalogo from "@/components/Catalogo";
 import SalaRoyalEnfield from "@/components/SalaRoyalEnfield";
@@ -19,6 +20,7 @@ export default function Home() {
       <main>
         <Hero />
         <ShowcasePremium />
+        <GiroBeneficios />
         <Marcas />
         <Catalogo />
         <SalaRoyalEnfield />
