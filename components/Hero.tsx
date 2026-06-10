@@ -3,23 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { linkWhatsApp, MENSAJE_WSP_GENERICO, NEGOCIO } from "@/lib/config";
-
-/**
- * Hero estilo Zero Motorcycles: sección de 300vh con contenido sticky.
- * El scroll dentro de la sección hace "scrub" sobre la moto protagonista.
- *
- * Hay dos modos:
- *  - Frames reales 360° (TOTAL_FRAMES = 144) → se dibujan en <canvas>.
- *  - Placeholder (TOTAL_FRAMES = 1) → PNG con scrub sutil (rotación contenida
- *    + deriva + escala). NO se hace un giro completo porque un PNG plano
- *    desaparecería de canto a 90°/270°.
- *
- * Los frames `/public/360/hero/frame_001.webp … frame_144.webp` aún no existen
- * (se generarán con kie.ai). Cuando existan, subir TOTAL_FRAMES a 144.
- */
-const TOTAL_FRAMES = 1;
-const FRAME_PATH = (n: number) =>
-  `/360/hero/frame_${String(n).padStart(3, "0")}.webp`;
+import Viewer360 from "./Viewer360";
 
 /** Pide abrir el asistente del Recomendador IA (lo escucha RecomendadorIA). */
 function abrirRecomendador() {
@@ -28,14 +12,11 @@ function abrirRecomendador() {
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const framesRef = useRef<HTMLImageElement[]>([]);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [indicadorVisible, setIndicadorVisible] = useState(true);
-  const [framesListas, setFramesListas] = useState(false);
   const [reduce, setReduce] = useState(false);
 
-  // Respetar prefers-reduced-motion.
+  // Respetar prefers-reduced-motion (necesario para parallaxFondo).
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const sync = () => setReduce(mq.matches);
@@ -43,39 +24,6 @@ export default function Hero() {
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-
-  // Precargar frames reales (solo si existen).
-  useEffect(() => {
-    if (TOTAL_FRAMES <= 1) return;
-    const imgs: HTMLImageElement[] = [];
-    let cargadas = 0;
-    for (let i = 1; i <= TOTAL_FRAMES; i++) {
-      const img = new Image();
-      img.src = FRAME_PATH(i);
-      img.onload = () => {
-        cargadas++;
-        if (cargadas === TOTAL_FRAMES) setFramesListas(true);
-      };
-      imgs.push(img);
-    }
-    framesRef.current = imgs;
-  }, []);
-
-  // Dibujar el frame correspondiente al progreso de scroll.
-  useEffect(() => {
-    if (!framesListas || !canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-    const idx = Math.min(
-      TOTAL_FRAMES - 1,
-      Math.floor(scrollProgress * TOTAL_FRAMES),
-    );
-    const frame = framesRef.current[idx];
-    if (frame) {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.drawImage(frame, 0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
-  }, [scrollProgress, framesListas]);
 
   // Progreso de scroll dentro de la sección sticky.
   useEffect(() => {
@@ -101,10 +49,6 @@ export default function Hero() {
     };
   }, []);
 
-  // Scrub del placeholder: giro contenido (-14°→14°), deriva y escala suaves.
-  const giro = reduce ? 0 : (scrollProgress - 0.5) * 28; // grados
-  const deriva = reduce ? 0 : (0.5 - scrollProgress) * 6; // rem (entra de la derecha)
-  const escala = reduce ? 1 : 1 + scrollProgress * 0.08;
   const parallaxFondo = reduce ? 0 : scrollProgress * 48; // px
 
   return (
@@ -135,37 +79,18 @@ export default function Hero() {
           />
         </div>
 
-        {/* CANVAS — modo frames 360° reales */}
-        {TOTAL_FRAMES > 1 && (
-          <canvas
-            ref={canvasRef}
-            width={1200}
-            height={800}
-            aria-hidden="true"
-            className="absolute left-1/2 top-1/2 w-[65vw] max-w-[800px] -translate-x-1/2 -translate-y-1/2"
-            style={{ willChange: "transform" }}
+        {/* MOTO — delegada a Viewer360 (360° real si hay frames, placeholder rotateY si no) */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-[3%] top-1/2 w-[62vw] max-w-[680px] -translate-y-1/2 md:right-[6%] md:w-[52vw]"
+        >
+          <Viewer360
+            slug="sz-gsx-r-1000r"
+            fallbackImg="/motos/GSX-R1000R.png"
+            alt="Suzuki GSX-R 1000R"
+            progreso={scrollProgress}
           />
-        )}
-
-        {/* MOTO placeholder — scrub contenido (hasta tener frames reales) */}
-        {TOTAL_FRAMES <= 1 && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-[3%] top-1/2 w-[62vw] max-w-[680px] md:right-[6%] md:w-[52vw]"
-            style={{
-              transform: `translateY(-50%) translateX(${deriva}rem) perspective(1400px) rotateY(${giro}deg) scale(${escala})`,
-              willChange: "transform",
-            }}
-          >
-            <img
-              src="/motos/GSX-R1000R.png"
-              alt="Suzuki GSX-R1000R"
-              width={680}
-              height={453}
-              className="w-full object-contain drop-shadow-[0_30px_80px_rgba(226,35,26,0.28)]"
-            />
-          </div>
-        )}
+        </div>
 
         {/* OVERLAYS */}
         <div
