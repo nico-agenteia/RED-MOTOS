@@ -104,28 +104,28 @@ export default function Hero() {
 
     const ir = img.naturalWidth / img.naturalHeight;
     const cr = cw / ch;
-    const portrait = ch > cw;
+
+    // CONTAIN en todos los tamaños: la moto se ve COMPLETA, nunca recortada
+    // (ni en mobile). Se deja un margen para que no toque los bordes.
+    const margen = 0.88;
     let dw: number;
     let dh: number;
-    if (portrait) {
-      // contain: moto completa en mobile
-      if (ir > cr) {
-        dw = cw;
-        dh = cw / ir;
-      } else {
-        dh = ch;
-        dw = ch * ir;
-      }
+    if (ir > cr) {
+      dw = cw * margen;
+      dh = dw / ir;
     } else {
-      // cover: la moto llena la pantalla en desktop
-      if (ir > cr) {
-        dh = ch;
-        dw = ch * ir;
-      } else {
-        dw = cw;
-        dh = cw / ir;
-      }
+      dh = ch * margen;
+      dw = dh * ir;
     }
+
+    // Tope anti-pixelado: nunca escalar el frame por encima de su resolución
+    // nativa (evita el upscaling que se ve borroso/pixelado).
+    const maxW = img.naturalWidth;
+    if (dw > maxW) {
+      dw = maxW;
+      dh = maxW / ir;
+    }
+
     ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
   };
 

@@ -367,7 +367,7 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
         </div>
 
         {/* Layout principal: moto izquierda / texto derecha */}
-        <div className="mx-auto flex h-full max-w-7xl items-center gap-8 px-12 md:grid md:grid-cols-2 md:gap-4">
+        <div className="mx-auto flex h-full max-w-7xl items-center gap-8 px-12 md:grid md:grid-cols-[1.15fr_0.85fr] md:gap-4">
           {/* Moto — crossfade con AnimatePresence */}
           <div className="flex w-full items-center justify-start">
             <AnimatePresence mode="wait">
@@ -381,7 +381,7 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
                 initial={reducida ? undefined : "enter"}
                 animate={reducida ? undefined : "center"}
                 exit={reducida ? undefined : "exit"}
-                className="w-full max-w-[560px] object-contain"
+                className="w-full max-w-[680px] object-contain"
                 style={{
                   filter: `drop-shadow(0 30px 70px ${modelo.acento}55) drop-shadow(0 8px 24px rgba(0,0,0,0.6))`,
                 }}
@@ -441,7 +441,7 @@ function ShowcaseMobile({ reducida }: { reducida: boolean }) {
             width={560}
             height={373}
             loading="lazy"
-            className="mx-auto mb-8 w-full max-w-[360px] object-contain"
+            className="mx-auto mb-8 w-full max-w-[420px] object-contain"
             style={{
               filter: `drop-shadow(0 20px 50px ${modelo.acento}44) drop-shadow(0 4px 16px rgba(0,0,0,0.6))`,
             }}
