@@ -5,13 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { linkWhatsApp, MENSAJE_WSP_GENERICO, NEGOCIO } from "@/lib/config";
 import MegaMenuMotos from "./MegaMenuMotos";
 
-/* Links que NO son "Motos" — "Catálogo" es reemplazado por el botón del megamenú */
+/* Desktop: "Catálogo" se reemplaza por el botón del megamenú "Motos". */
 const LINKS = [
   { etiqueta: "Royal Enfield", href: "#royal-enfield" },
   { etiqueta: "Suzuki", href: "#suzuki" },
   { etiqueta: "Financiamiento", href: "#financiamiento" },
   { etiqueta: "Contacto", href: "#contacto" },
 ];
+
+/* Mobile (drawer): conserva "Catálogo" — el megamenú es solo desktop. */
+const LINKS_MOBILE = [{ etiqueta: "Catálogo", href: "#catalogo" }, ...LINKS];
 
 export default function Nav() {
   const [conScroll, setConScroll] = useState(false);
@@ -169,7 +172,7 @@ export default function Nav() {
               aria-label="Menú móvil"
               className="fixed right-0 top-0 z-50 flex h-dvh w-[280px] flex-col gap-2 border-l border-line bg-surface px-6 pt-24 lg:hidden"
             >
-              {LINKS.map((link, i) => (
+              {LINKS_MOBILE.map((link, i) => (
                 <motion.a
                   key={link.href}
                   href={link.href}
@@ -195,7 +198,7 @@ export default function Nav() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{
-                  delay: LINKS.length * 0.08,
+                  delay: LINKS_MOBILE.length * 0.08,
                   duration: 0.35,
                   ease: [0.16, 1, 0.3, 1],
                 }}
