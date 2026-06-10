@@ -1,82 +1,43 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Viewer360 from "./Viewer360";
 import { prefiereMenosMovimiento } from "@/lib/gsap-setup";
 
 /* ── Datos de los 6 beneficios ──────────────────────────────────────── */
 const BENEFICIOS = [
-  {
-    num: "01",
-    titulo: "GARANTÍA OFICIAL",
-    desc: "Royal Enfield con respaldo de fábrica.",
-  },
-  {
-    num: "02",
-    titulo: "POSTVENTA EN CHILE",
-    desc: "Servicio técnico y repuestos asegurados.",
-  },
-  {
-    num: "03",
-    titulo: "FINANCIAMIENTO EN EL ACTO",
-    desc: "Aprobación rápida, cuotas a tu medida.",
-  },
-  {
-    num: "04",
-    titulo: "PUNTO OFICIAL RE",
-    desc: "Concesionario autorizado en Santiago.",
-  },
-  {
-    num: "05",
-    titulo: "8 MARCAS OFICIALES",
-    desc: "Royal Enfield, Suzuki y más bajo un techo.",
-  },
-  {
-    num: "06",
-    titulo: "3 SUCURSALES",
-    desc: "La Florida, La Cisterna y Casa Matriz.",
-  },
+  { num: "01", titulo: "GARANTÍA OFICIAL", desc: "Royal Enfield con respaldo de fábrica." },
+  { num: "02", titulo: "POSTVENTA EN CHILE", desc: "Servicio técnico y repuestos asegurados." },
+  { num: "03", titulo: "FINANCIAMIENTO EN EL ACTO", desc: "Aprobación rápida, cuotas a tu medida." },
+  { num: "04", titulo: "PUNTO OFICIAL RE", desc: "Concesionario autorizado en Santiago." },
+  { num: "05", titulo: "8 MARCAS OFICIALES", desc: "Royal Enfield, Suzuki y más bajo un techo." },
+  { num: "06", titulo: "3 SUCURSALES", desc: "La Florida, La Cisterna y Casa Matriz." },
 ] as const;
 
-/* ── Variantes Framer Motion para los bloques ───────────────────────── */
-const itemVariants = {
-  hidden: { x: -60, opacity: 0 },
-  visible: (i: number) => ({
-    x: 0,
-    opacity: 1,
-    transition: {
-      delay: i * 0.08,
-      duration: 0.7,
-      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-    },
-  }),
-};
+const N = BENEFICIOS.length;
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export default function GiroBeneficios() {
   const sectionRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [reduce] = useState(() =>
-    typeof window !== "undefined" ? prefiereMenosMovimiento() : false
+    typeof window !== "undefined" ? prefiereMenosMovimiento() : false,
   );
 
-  /* ── Scroll progress dentro de la sección sticky ───────────────────── */
+  /* ── Progreso de scroll dentro de la sección sticky ────────────────── */
   useEffect(() => {
     let raf = 0;
-
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const section = sectionRef.current;
         if (!section) return;
         const { top, height } = section.getBoundingClientRect();
-        const windowH = window.innerHeight;
-        const denom = height - windowH || 1;
-        const progress = Math.max(0, Math.min(1, -top / denom));
-        setScrollProgress(progress);
+        const denom = height - window.innerHeight || 1;
+        setScrollProgress(Math.max(0, Math.min(1, -top / denom)));
       });
     };
-
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
@@ -85,156 +46,126 @@ export default function GiroBeneficios() {
     };
   }, []);
 
-  /* Progreso efectivo: fijo en 0 cuando el usuario prefiere menos movimiento */
   const progreso = reduce ? 0 : scrollProgress;
+  /* Beneficio activo según el tramo de scroll (1 beneficio por tramo). */
+  const activoIdx = Math.min(N - 1, Math.floor(progreso * N));
+  const activo = BENEFICIOS[activoIdx];
 
   return (
     <>
       {/* ══════════════════════════════════════════════════════════════════
-          DESKTOP ≥768px — sección sticky 200vh con moto + beneficios
+          DESKTOP ≥768px — pin largo: moto girando 360 + beneficio activo
+          que cambia al scrollear (estilo Zero / Apple)
           ══════════════════════════════════════════════════════════════════ */}
       <section
         ref={sectionRef}
         id="giro-beneficios"
         aria-label="Por qué Red Motos"
         className="relative hidden md:block"
-        style={{ height: "200vh" }}
+        style={{ height: `${N * 100}vh` }}
       >
-        {/* Contenedor sticky */}
-        <div
-          className="grain sticky top-0 h-dvh overflow-hidden bg-black"
-          style={{ position: "sticky", top: 0 }}
-        >
-          {/* Gradiente sutil en bordes para dar profundidad */}
+        <div className="grain sticky top-0 flex h-dvh flex-col overflow-hidden bg-black">
+          {/* Encabezado fijo arriba-izquierda */}
+          <div className="relative z-20 px-8 pt-16 xl:px-16">
+            <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
+              ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
+            </p>
+            <h2
+              className="headline-display text-white"
+              style={{ fontSize: "clamp(32px, 4vw, 56px)" }}
+            >
+              POR QUÉ RED MOTOS
+            </h2>
+          </div>
+
+          {/* Moto girando 360 — ocupa el centro, gira a lo largo de toda la sección */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 70% 80% at 40% 50%, rgba(226,35,26,0.06) 0%, transparent 70%)",
-            }}
-          />
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+          >
+            <Viewer360
+              slug="re-super-meteor-650-celestial"
+              fallbackImg="/motos/CELESTIALRED.png"
+              alt="Royal Enfield Super Meteor 650 Celestial"
+              progreso={progreso}
+              className="w-full max-w-[820px] translate-y-[-4%]"
+            />
+          </div>
 
-          <div className="relative z-10 flex h-full flex-col px-8 xl:px-16">
-            {/* ── Encabezado ─────────────────────────────────────────────── */}
-            <div className="pt-16 pb-8">
-              <p className="label-mono mb-3" style={{ color: "var(--accent)" }}>
-                ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
-              </p>
-              <h2
-                className="headline-display text-white"
-                style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
-              >
-                POR QUÉ RED MOTOS
-              </h2>
-            </div>
-
-            {/* ── Layout moto + beneficios ───────────────────────────────── */}
-            <div className="flex flex-1 items-center gap-8 xl:gap-16">
-              {/* Moto 360 — lado izquierdo */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none flex-1"
-                style={{ minWidth: 0 }}
-              >
-                <Viewer360
-                  slug="re-super-meteor-650-celestial"
-                  fallbackImg="/motos/CELESTIALRED.png"
-                  alt="Royal Enfield Super Meteor 650 Celestial"
-                  progreso={progreso}
-                  className="mx-auto w-full max-w-[640px]"
-                />
-              </div>
-
-              {/* Beneficios — lado derecho */}
-              <div
-                className="flex flex-col gap-5 xl:gap-6"
-                style={{ width: "clamp(280px, 38%, 480px)", flexShrink: 0 }}
-              >
-                {BENEFICIOS.map((b, i) => (
-                  <motion.div
-                    key={b.num}
-                    custom={i}
-                    initial={reduce ? "visible" : "hidden"}
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-80px" }}
-                    variants={itemVariants}
-                    className="flex items-start gap-4 border-b pb-5 last:border-b-0 last:pb-0"
-                    style={{ borderColor: "var(--border)" }}
+          {/* Beneficio activo — grande, abajo-izquierda, cambia con el scroll */}
+          <div className="relative z-20 mt-auto px-8 pb-20 xl:px-16">
+            <div className="min-h-[200px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activo.num}
+                  initial={reduce ? { opacity: 1 } : { opacity: 0, y: 28 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduce ? { opacity: 1 } : { opacity: 0, y: -28 }}
+                  transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
+                  className="max-w-[680px]"
+                >
+                  <span
+                    className="label-mono block"
+                    style={{ color: "var(--accent)", fontSize: "13px" }}
                   >
-                    {/* Número acento */}
-                    <span
-                      className="label-mono shrink-0 pt-0.5 text-[11px]"
-                      style={{ color: "var(--accent)", letterSpacing: "0.15em" }}
-                    >
-                      {b.num}
-                    </span>
-
-                    <div>
-                      <p
-                        className="headline-display text-white"
-                        style={{ fontSize: "clamp(14px, 1.4vw, 18px)", lineHeight: 1.1 }}
-                      >
-                        {b.titulo}
-                      </p>
-                      <p
-                        className="mt-1 text-sm leading-relaxed"
-                        style={{ color: "var(--fg-muted)" }}
-                      >
-                        {b.desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    {activo.num} / {String(N).padStart(2, "0")}
+                  </span>
+                  <h3
+                    className="headline-display mt-3 text-white"
+                    style={{ fontSize: "clamp(44px, 6vw, 88px)", lineHeight: 0.95 }}
+                  >
+                    {activo.titulo}
+                  </h3>
+                  <p
+                    className="mt-4 max-w-[440px] leading-relaxed"
+                    style={{ color: "var(--fg-muted)", fontSize: "clamp(15px, 1.3vw, 19px)" }}
+                  >
+                    {activo.desc}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Indicador de progreso lineal en la base */}
-            <div
-              aria-hidden="true"
-              className="absolute bottom-0 left-0 h-[2px] w-full"
-              style={{ background: "var(--surface-2)" }}
-            >
-              <div
-                className="h-full"
-                style={{
-                  width: `${progreso * 100}%`,
-                  background: "var(--accent)",
-                  transition: reduce ? "none" : "width 0.1s linear",
-                  willChange: "width",
-                }}
-              />
+            {/* Indicador de pasos 01–06 */}
+            <div className="mt-8 flex items-center gap-3">
+              {BENEFICIOS.map((b, i) => (
+                <span
+                  key={b.num}
+                  aria-hidden="true"
+                  className="h-[3px] rounded-full transition-all duration-300"
+                  style={{
+                    width: i === activoIdx ? "40px" : "20px",
+                    background:
+                      i === activoIdx ? "var(--accent)" : "var(--surface-2)",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          MOBILE <768px — apilado, sin pin
+          MOBILE <768px — apilado con reveal, títulos grandes
           ══════════════════════════════════════════════════════════════════ */}
       <section
         id="giro-beneficios-mobile"
         aria-label="Por qué Red Motos"
         className="block bg-black py-20 md:hidden"
-        style={{
-          background:
-            "radial-gradient(ellipse 120% 60% at 50% 0%, rgba(226,35,26,0.07) 0%, #000 55%)",
-        }}
       >
         <div className="px-5">
-          {/* Encabezado */}
-          <p className="label-mono mb-3" style={{ color: "var(--accent)" }}>
+          <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
             ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
           </p>
           <h2
             className="headline-display mb-10 text-white"
-            style={{ fontSize: "clamp(32px, 9vw, 52px)" }}
+            style={{ fontSize: "clamp(30px, 8vw, 48px)" }}
           >
             POR QUÉ RED MOTOS
           </h2>
 
-          {/* Moto estática arriba */}
-          <div aria-hidden="true" className="pointer-events-none mb-12">
+          {/* Moto arriba */}
+          <div aria-hidden="true" className="pointer-events-none mb-14">
             <Viewer360
               slug="re-super-meteor-650-celestial"
               fallbackImg="/motos/CELESTIALRED.png"
@@ -244,39 +175,34 @@ export default function GiroBeneficios() {
             />
           </div>
 
-          {/* Beneficios apilados */}
-          <div className="flex flex-col gap-0">
-            {BENEFICIOS.map((b, i) => (
+          {/* Beneficios apilados grandes con reveal */}
+          <div className="flex flex-col gap-12">
+            {BENEFICIOS.map((b) => (
               <motion.div
                 key={b.num}
-                custom={i}
-                initial={reduce ? "visible" : "hidden"}
-                whileInView="visible"
+                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 36 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                variants={itemVariants}
-                className="flex items-start gap-4 border-b py-5 last:border-b-0"
-                style={{ borderColor: "var(--border)" }}
+                transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
               >
                 <span
-                  className="label-mono shrink-0 pt-0.5"
-                  style={{ color: "var(--accent)", fontSize: "11px" }}
+                  className="label-mono block"
+                  style={{ color: "var(--accent)", fontSize: "12px" }}
                 >
-                  {b.num}
+                  {b.num} / {String(N).padStart(2, "0")}
                 </span>
-                <div>
-                  <p
-                    className="headline-display text-white"
-                    style={{ fontSize: "clamp(15px, 4.5vw, 20px)", lineHeight: 1.1 }}
-                  >
-                    {b.titulo}
-                  </p>
-                  <p
-                    className="mt-1 text-sm leading-relaxed"
-                    style={{ color: "var(--fg-muted)" }}
-                  >
-                    {b.desc}
-                  </p>
-                </div>
+                <h3
+                  className="headline-display mt-2 text-white"
+                  style={{ fontSize: "clamp(30px, 9vw, 48px)", lineHeight: 0.98 }}
+                >
+                  {b.titulo}
+                </h3>
+                <p
+                  className="mt-3 leading-relaxed"
+                  style={{ color: "var(--fg-muted)", fontSize: "16px" }}
+                >
+                  {b.desc}
+                </p>
               </motion.div>
             ))}
           </div>
