@@ -56,20 +56,39 @@ export default function Viewer360({
   }, [count, framePath]);
 
   // ─── Dibujar frame en canvas según progreso ───────────────────────────────
-  useEffect(() => {
-    if (!framesListas || !canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
+  const dibujar = (idx: number) => {
+    const canvas = canvasRef.current;
+    const frame = framesRef.current[idx];
+    if (!canvas || !frame || !frame.complete || frame.naturalWidth === 0) return;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cw = canvas.clientWidth;
+    const ch = canvas.clientHeight;
+    if (cw === 0 || ch === 0) return;
+    if (canvas.width !== cw * dpr || canvas.height !== ch * dpr) {
+      canvas.width = cw * dpr;
+      canvas.height = ch * dpr;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+
+    const ir = frame.naturalWidth / frame.naturalHeight;
+    const cr = cw / ch;
+    let dw: number, dh: number;
+    if (ir > cr) { dw = cw; dh = cw / ir; }
+    else         { dw = ch * ir; dh = ch; }
+    ctx.drawImage(frame, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  };
+
+  useEffect(() => {
+    if (!framesListas) return;
     const idx = reduce
       ? Math.floor(count / 2)
       : Math.min(count - 1, Math.floor(progreso * count));
-
-    const frame = framesRef.current[idx];
-    if (frame) {
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      ctx.drawImage(frame, 0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
+    dibujar(idx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progreso, framesListas, reduce, count]);
 
   // ─── Modo placeholder: transform CSS según progreso ───────────────────────
@@ -91,10 +110,8 @@ export default function Viewer360({
 
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={800}
           aria-hidden="true"
-          className={`h-full w-full object-contain${framesListas ? "" : " hidden"}`}
+          className={`h-full w-full${framesListas ? "" : " hidden"}`}
           style={{ willChange: "transform" }}
         />
       </div>
