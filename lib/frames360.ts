@@ -3,8 +3,8 @@
 // Al agregar frames a /public/360/<slug>/, registrar aquí su cantidad.
 // <slug> = el id del catálogo (lib/catalogo.ts), p.ej. "sz-gsx-r-1000r".
 export const FRAMES_360: Record<string, number> = {
-  "sz-gsx-r-1000r": 24,
-  "re-super-meteor-650-celestial": 24,
+  "sz-gsx-r-1000r": 150,
+  "re-super-meteor-650-celestial": 150,
 };
 
 export type Frames360 = {

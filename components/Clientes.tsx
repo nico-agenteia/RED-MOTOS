@@ -139,10 +139,10 @@ export default function Clientes() {
               src={t.src}
               alt={t.alt}
               width={380}
-              height={285}
+              height={480}
               loading="lazy"
               draggable={false}
-              className="aspect-[4/3] w-full rounded-lg object-cover"
+              className="h-[320px] w-full rounded-lg object-contain bg-zinc-900 md:h-[400px]"
             />
           </motion.figure>
         ))}

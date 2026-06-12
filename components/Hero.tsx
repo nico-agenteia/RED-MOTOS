@@ -26,6 +26,7 @@ import { frames360 } from "@/lib/frames360";
 
 const SLUG = "sz-gsx-r-1000r";
 const FALLBACK_IMG = "/motos/GSX-R1000R.png";
+const HERO_BG = "/hero-bg.jpg";
 const { count: TOTAL_FRAMES, framePath } = frames360(SLUG);
 
 /** Titulares que aparecen en ángulos clave (rango de progreso 0–1). */
@@ -47,6 +48,7 @@ export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
+  const heroBgRef = useRef<HTMLImageElement | null>(null);
   const [estado, setEstado] = useState<"cargando" | "listo" | "sin-frames">(
     TOTAL_FRAMES > 1 ? "cargando" : "sin-frames",
   );
@@ -62,6 +64,13 @@ export default function Hero() {
     [0, Math.max(0, TOTAL_FRAMES - 1)],
   );
   const scrollHintOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+
+  // Precarga del fondo estático del hero.
+  useEffect(() => {
+    const bg = new Image();
+    bg.src = HERO_BG;
+    heroBgRef.current = bg;
+  }, []);
 
   // Precarga de frames (solo si existen).
   useEffect(() => {
@@ -105,27 +114,23 @@ export default function Hero() {
     const ir = img.naturalWidth / img.naturalHeight;
     const cr = cw / ch;
 
-    // CONTAIN en todos los tamaños: la moto se ve COMPLETA, nunca recortada
-    // (ni en mobile). Se deja un margen para que no toque los bordes.
+    // Capa 1 — fondo estático (cover): usa hero-bg.jpg para rellenar el canvas
+    // con el gradiente azul real del estudio, sin depender del frame.
+    const bg = heroBgRef.current;
+    const bgSrc = bg && bg.complete && bg.naturalWidth > 0 ? bg : img;
+    const bgIr = bgSrc.naturalWidth / bgSrc.naturalHeight;
+    let dwBg: number, dhBg: number;
+    if (bgIr > cr) { dhBg = ch; dwBg = ch * bgIr; }
+    else            { dwBg = cw; dhBg = cw / bgIr; }
+    ctx.drawImage(bgSrc, (cw - dwBg) / 2, (ch - dhBg) / 2, dwBg, dhBg);
+
+    // Capa 2 — CONTAIN: la moto completa y nítida encima, sin recorte.
     const margen = 0.88;
-    let dw: number;
-    let dh: number;
-    if (ir > cr) {
-      dw = cw * margen;
-      dh = dw / ir;
-    } else {
-      dh = ch * margen;
-      dw = dh * ir;
-    }
-
-    // Tope anti-pixelado: nunca escalar el frame por encima de su resolución
-    // nativa (evita el upscaling que se ve borroso/pixelado).
+    let dw: number, dh: number;
+    if (ir > cr) { dw = cw * margen; dh = dw / ir; }
+    else         { dh = ch * margen; dw = dh * ir; }
     const maxW = img.naturalWidth;
-    if (dw > maxW) {
-      dw = maxW;
-      dh = maxW / ir;
-    }
-
+    if (dw > maxW) { dw = maxW; dh = maxW / ir; }
     ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
   };
 
@@ -155,8 +160,8 @@ export default function Hero() {
       id="hero"
       ref={containerRef}
       aria-label="Portada Red Motos"
-      className="relative bg-black"
-      style={{ height: "300vh" }}
+      className="relative"
+      style={{ height: "300vh", backgroundImage: `url(${HERO_BG})`, backgroundSize: "cover", backgroundPosition: "center" }}
     >
       <div className="sticky top-0 flex h-dvh items-center justify-center overflow-hidden">
         {/* Glow rojo de fondo */}
