@@ -200,14 +200,22 @@ export default function GiroBeneficios() {
         className="relative block md:hidden"
         style={{ height: `${N * 100}vh` }}
       >
-        <div className="sticky top-0 h-dvh overflow-hidden bg-black">
+        <div
+          className="sticky top-0 h-dvh overflow-hidden"
+          style={{
+            // Fondo temático Royal Enfield: estudio granate full-bleed que
+            // funde con el fondo horneado de los frames 360.
+            background:
+              "radial-gradient(ellipse 120% 82% at 50% 40%, #5e3439 0%, #3a2024 52%, #1b1013 100%)",
+          }}
+        >
 
-          {/* Glow radial animado detrás de la moto */}
+          {/* Glow radial cálido sutil detrás de la moto */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 transition-all duration-700"
             style={{
-              background: `radial-gradient(ellipse 80% 55% at 50% 52%, ${GLOW_COLORS[activoMobileIdx]} 0%, transparent 65%)`,
+              background: `radial-gradient(ellipse 80% 55% at 50% 46%, ${GLOW_COLORS[activoMobileIdx]} 0%, transparent 65%)`,
             }}
           />
 
@@ -221,30 +229,32 @@ export default function GiroBeneficios() {
             </p>
           </div>
 
-          {/* Moto STICKY centrada — gira con el scroll */}
+          {/* Moto STICKY — full-bleed: el granate del frame sangra por los
+              lados y funde con el fondo de la sección (sin bordes de card). */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            className="pointer-events-none absolute inset-x-0 top-0 bottom-[14%] flex items-center justify-center"
           >
             <Viewer360
               slug="re-super-meteor-650-celestial"
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={reduce ? 0.35 : mobileProgreso}
-              className="w-full max-w-[380px]"
+              className="w-[116%] max-w-none"
             />
           </div>
 
-          {/* Gradientes para enmarcar la moto (arriba y abajo) */}
+          {/* Máscaras granate (arriba/abajo) — funden los bordes del frame
+              con el fondo y dan legibilidad al texto inferior. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32"
-            style={{ background: "linear-gradient(to bottom, black 0%, transparent 100%)" }}
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28"
+            style={{ background: "linear-gradient(to bottom, #1b1013 0%, transparent 100%)" }}
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-48"
-            style={{ background: "linear-gradient(to top, black 0%, transparent 100%)" }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-56"
+            style={{ background: "linear-gradient(to top, #1b1013 0%, #1b1013 20%, transparent 100%)" }}
           />
 
           {/* Beneficio activo — abajo, sobre el gradiente inferior */}
