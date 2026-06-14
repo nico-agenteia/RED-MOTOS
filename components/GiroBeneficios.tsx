@@ -20,7 +20,9 @@ const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export default function GiroBeneficios() {
   const sectionRef = useRef<HTMLElement>(null);
+  const mobileSectionRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [mobileProgress, setMobileProgress] = useState(0);
   const [reduce] = useState(() =>
     typeof window !== "undefined" ? prefiereMenosMovimiento() : false,
   );
@@ -36,6 +38,21 @@ export default function GiroBeneficios() {
         onUpdate: (self) => setScrollProgress(self.progress),
       });
     }, sectionRef);
+    return () => ctx.revert();
+  }, [reduce]);
+
+  /* ── Mobile: la moto gira según el scroll de la sección por el viewport ── */
+  useEffect(() => {
+    if (!mobileSectionRef.current || reduce) return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: mobileSectionRef.current,
+        start: "top bottom",
+        end: "bottom top",
+        scrub: 0,
+        onUpdate: (self) => setMobileProgress(self.progress),
+      });
+    }, mobileSectionRef);
     return () => ctx.revert();
   }, [reduce]);
 
@@ -142,41 +159,50 @@ export default function GiroBeneficios() {
           MOBILE <768px — apilado con reveal, títulos grandes
           ══════════════════════════════════════════════════════════════════ */}
       <section
+        ref={mobileSectionRef}
         id="giro-beneficios-mobile"
         aria-label="Por qué Red Motos"
         className="block bg-black py-20 md:hidden"
       >
         <div className="px-5">
-          <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
-            ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
-          </p>
-          <h2
-            className="headline-display mb-10 text-white"
-            style={{ fontSize: "clamp(30px, 8vw, 48px)" }}
+          {/* Encabezado con entrada */}
+          <motion.div
+            initial={reduce ? { opacity: 1 } : { opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
           >
-            POR QUÉ RED MOTOS
-          </h2>
+            <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
+              ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
+            </p>
+            <h2
+              className="headline-display mb-10 text-white"
+              style={{ fontSize: "clamp(30px, 8vw, 48px)" }}
+            >
+              POR QUÉ RED MOTOS
+            </h2>
+          </motion.div>
 
-          {/* Moto arriba */}
+          {/* Moto arriba — gira con el scroll de la sección */}
           <div aria-hidden="true" className="pointer-events-none mb-14">
             <Viewer360
               slug="re-super-meteor-650-celestial"
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
-              progreso={reduce ? 0 : 0.35}
+              progreso={reduce ? 0.35 : mobileProgress}
               className="mx-auto w-full max-w-[380px]"
             />
           </div>
 
-          {/* Beneficios apilados grandes con reveal */}
+          {/* Beneficios apilados grandes con reveal más rápido y dramático */}
           <div className="flex flex-col gap-12">
             {BENEFICIOS.map((b) => (
               <motion.div
                 key={b.num}
-                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 36 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
+                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 60, x: -16 }}
+                whileInView={{ opacity: 1, y: 0, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: reduce ? 0 : 0.75, ease: EASE }}
               >
                 <span
                   className="label-mono block"

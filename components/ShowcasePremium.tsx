@@ -446,51 +446,88 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
   );
 }
 
-// ─── Mobile: apilado vertical, reveal suave por tarjeta ──────────────────────
+// ─── Mobile: full-bleed por modelo, mitad delantera asomando (tipo Zero) ─────
 
 function ShowcaseMobile({ reducida }: { reducida: boolean }) {
   return (
-    <div className="flex flex-col gap-0 bg-black">
-      {MODELOS.map((modelo) => (
-        <motion.article
+    <div className="flex flex-col">
+      {MODELOS.map((modelo, i) => (
+        <article
           key={modelo.id}
           aria-label={`${modelo.marca} ${modelo.nombre}`}
-          initial={reducida ? { opacity: 1 } : { opacity: 0, y: 40 }}
-          whileInView={reducida ? { opacity: 1 } : { opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-15%" }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative overflow-hidden bg-black px-5 py-16"
+          className="relative min-h-[100svh] overflow-hidden"
+          style={{ backgroundColor: modelo.bg }}
         >
-          {/* Separador superior */}
-          <span
+          {/* Grano de textura del color del modelo */}
+          <div
             aria-hidden="true"
-            className="mb-10 block h-px w-full"
-            style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
-          />
-
-          {/* Moto */}
-          <img
-            src={modelo.img}
-            alt={`${modelo.marca} ${modelo.nombre}`}
-            width={560}
-            height={373}
-            loading="lazy"
-            className="mx-auto mb-8 w-full max-w-[420px] object-contain"
+            className="pointer-events-none absolute inset-0 opacity-[0.03]"
             style={{
-              filter: `drop-shadow(0 20px 50px ${modelo.acento}44) drop-shadow(0 4px 16px rgba(0,0,0,0.6))`,
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+              backgroundSize: "160px 160px",
             }}
           />
 
-          {/* Familia */}
+          {/* Número gigante fantasma de fondo */}
           <span
-            className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/40"
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-[4vw] left-2 font-display font-extrabold leading-none text-white/[0.04]"
+            style={{ fontSize: "46vw" }}
           >
-            {modelo.familia}
+            {String(i + 1).padStart(2, "0")}
           </span>
 
-          {/* Panel */}
-          <PanelModelo modelo={modelo} reducida={reducida} />
-        </motion.article>
+          {/* Moto — solo la mitad delantera asoma desde la derecha.
+              Container con overflow:hidden + imagen 150% anclada a la derecha:
+              el faro y el manubrio quedan visibles, la rueda trasera sale por
+              la izquierda del frame (igual que zeromotorcycles.com en mobile). */}
+          <motion.div
+            className="pointer-events-none absolute inset-x-0 top-0 h-[54vh] overflow-hidden"
+            initial={reducida ? { opacity: 1, x: 0 } : { opacity: 0, x: 60 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-20%" }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <img
+              src={modelo.img}
+              alt={`${modelo.marca} ${modelo.nombre}`}
+              width={560}
+              height={373}
+              loading="lazy"
+              className="absolute right-0 top-1/2 w-[150%] max-w-none -translate-y-1/2 object-contain"
+              style={{
+                objectPosition: "right center",
+                filter: `drop-shadow(0 24px 60px ${modelo.acento}55) drop-shadow(0 6px 20px rgba(0,0,0,0.7))`,
+              }}
+            />
+          </motion.div>
+
+          {/* Velo del color del modelo: funde la base de la moto con el texto */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `linear-gradient(to top, ${modelo.bg} 28%, transparent 62%)`,
+            }}
+          />
+
+          {/* Texto del modelo, debajo de la moto */}
+          <div className="relative z-10 px-5 pb-16 pt-[48vh]">
+            <div className="mb-4 flex items-center justify-between">
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.35em]"
+                style={{ color: modelo.acento }}
+              >
+                {modelo.familia}
+              </span>
+              <span className="font-mono text-[11px] tabular-nums text-white/40">
+                {String(i + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}
+              </span>
+            </div>
+            <PanelModelo modelo={modelo} reducida={reducida} />
+          </div>
+        </article>
       ))}
     </div>
   );

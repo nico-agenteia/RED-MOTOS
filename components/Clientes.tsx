@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useReveal } from "@/lib/useReveal";
 
 // Las 20 tarjetas co-brandeadas reales rescatadas de redmotos.cl.
 const TESTIMONIOS = Array.from({ length: 20 }, (_, i) => {
@@ -16,6 +17,11 @@ const AUTOPLAY_MS = 4000;
 
 export default function Clientes() {
   const pistaRef = useRef<HTMLDivElement>(null);
+  const headerRef = useReveal<HTMLDivElement>(".cliente-reveal", {
+    y: 30,
+    stagger: 0.1,
+    start: "top 80%",
+  });
   const [activo, setActivo] = useState(0);
   const [pausado, setPausado] = useState(false);
 
@@ -77,15 +83,15 @@ export default function Clientes() {
 
   return (
     <section aria-label="Nuestros clientes" className="bg-black py-24">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <p className="label-mono mb-3">Lo que dicen de nosotros</p>
+      <div ref={headerRef} className="mx-auto max-w-7xl px-4 md:px-8">
+        <p className="cliente-reveal label-mono mb-3">Lo que dicen de nosotros</p>
         <h2
-          className="headline-display text-white"
+          className="cliente-reveal headline-display text-white"
           style={{ fontSize: "clamp(40px, 6vw, 72px)" }}
         >
           Nuestros clientes
         </h2>
-        <p className="mt-4 max-w-xl text-lg text-muted">
+        <p className="cliente-reveal mt-4 max-w-xl text-lg text-muted">
           Gente real retirando su moto real, en tienda. Sin actores, sin
           fotos de banco de imágenes.
         </p>

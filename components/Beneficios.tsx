@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useReveal } from "@/lib/useReveal";
 
 interface Beneficio {
   frase: React.ReactNode;
@@ -50,40 +50,37 @@ const BENEFICIOS: Beneficio[] = [
   },
 ];
 
+/** Un bloque de beneficio con reveal GSAP (expo.out) y trigger propio. */
+function BeneficioBloque({ b }: { b: Beneficio }) {
+  const ref = useReveal<HTMLDivElement>(".beneficio-reveal", {
+    y: 56,
+    stagger: 0.12,
+    start: "top 78%",
+    duration: 1,
+  });
+
+  return (
+    <div className={`flex min-h-[60vh] items-center ${b.fondo}`}>
+      <div ref={ref} className="mx-auto w-full max-w-7xl px-4 py-16 md:px-8">
+        <h2
+          className="beneficio-reveal headline-display text-white"
+          style={{ fontSize: "clamp(48px, 7vw, 80px)" }}
+        >
+          {b.frase}
+        </h2>
+        <p className="beneficio-reveal mt-4 max-w-xl text-base text-muted">
+          {b.apoyo}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Beneficios() {
   return (
     <section aria-label="Beneficios de comprar en Red Motos">
       {BENEFICIOS.map((b, i) => (
-        <div
-          key={i}
-          className={`flex min-h-[60vh] items-center ${b.fondo}`}
-        >
-          <div className="mx-auto w-full max-w-7xl px-4 py-16 md:px-8">
-            <motion.h2
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="headline-display text-white"
-              style={{ fontSize: "clamp(48px, 7vw, 80px)" }}
-            >
-              {b.frase}
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{
-                delay: 0.12,
-                duration: 0.5,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="mt-4 max-w-xl text-base text-muted"
-            >
-              {b.apoyo}
-            </motion.p>
-          </div>
-        </div>
+        <BeneficioBloque key={i} b={b} />
       ))}
     </section>
   );

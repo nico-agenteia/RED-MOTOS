@@ -65,6 +65,10 @@ export default function Hero() {
     [0, Math.max(0, TOTAL_FRAMES - 1)],
   );
   const scrollHintOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+  // El intro de carga ocupa el rango del primer titular; se desvanece al
+  // empezar a scrollear para no solaparse con los titulares rotativos.
+  const introOpacity = useTransform(scrollYProgress, [0, 0.13, 0.22], [1, 1, 0]);
+  const introRef = useRef<HTMLDivElement>(null);
 
   // Precarga del fondo estático del hero.
   useEffect(() => {
@@ -150,6 +154,36 @@ export default function Hero() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado, reduce]);
 
+  // Intro dramático del primer titular al cargar (patrón Zero Motorcycles):
+  // los textos entran desde abajo (y:100→0) con pan lateral simultáneo
+  // (x:±26vw desktop / ±16vw mobile). Solo en el hero 360, no en scroll.
+  useEffect(() => {
+    if (estado !== "listo" || reduce || prefiereMenosMovimiento()) return;
+    const isMobile = window.innerWidth < 768;
+    const ctx = gsap.context(() => {
+      const lines = gsap.utils.toArray<HTMLElement>(".hero-intro-line");
+      if (!lines.length) return;
+      const tl = gsap.timeline({ delay: 0.25 });
+      tl.fromTo(
+        lines,
+        { y: 100, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1.6, ease: "expo.out", stagger: 0.12 },
+        0,
+      );
+      tl.from(
+        lines,
+        {
+          x: isMobile ? "16vw" : "26vw",
+          duration: 2.4,
+          ease: "expo.out",
+          stagger: 0.12,
+        },
+        0.25,
+      );
+    }, introRef);
+    return () => ctx.revert();
+  }, [estado, reduce]);
+
   // ── Fallback estático premium (sin frames o reduced-motion) ──────────────
   if (estado === "sin-frames" || reduce) {
     return <HeroEstatico />;
@@ -193,9 +227,32 @@ export default function Hero() {
           </div>
         )}
 
-        {/* Titulares por ángulo */}
+        {/* Intro de carga — primer titular con entrada dramática (GSAP) */}
+        {estado === "listo" && (
+          <motion.div
+            ref={introRef}
+            style={{ opacity: introOpacity }}
+            className="pointer-events-none absolute left-0 right-0 top-[22%] z-20 px-6 text-center"
+            aria-hidden="true"
+          >
+            <h2
+              className="hero-intro-line headline-display text-white"
+              style={{ fontSize: "clamp(40px, 8vw, 96px)", lineHeight: 0.92, opacity: 0 }}
+            >
+              {TITULARES[0].texto}
+            </h2>
+            <p
+              className="hero-intro-line mt-3 text-lg sm:text-2xl"
+              style={{ color: "var(--fg-muted)", opacity: 0 }}
+            >
+              {TITULARES[0].sub}
+            </p>
+          </motion.div>
+        )}
+
+        {/* Titulares por ángulo (a partir del segundo; el primero es el intro) */}
         {estado === "listo" &&
-          TITULARES.map((t, i) => (
+          TITULARES.slice(1).map((t, i) => (
             <TituloAngulo
               key={i}
               progreso={scrollYProgress}
