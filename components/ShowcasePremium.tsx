@@ -441,6 +441,7 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
                 modelo={modelo}
                 reducida={reducida}
                 className="md:items-end md:text-right"
+                mostrarHermanos={false}
               />
             </motion.div>
           </AnimatePresence>
