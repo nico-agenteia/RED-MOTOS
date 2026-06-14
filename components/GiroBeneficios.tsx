@@ -15,19 +15,30 @@ const BENEFICIOS = [
   { num: "06", titulo: "3 SUCURSALES", desc: "La Florida, La Cisterna y Casa Matriz." },
 ] as const;
 
+/* Colores de glow sutil por beneficio (acento + variación cálida/fría) */
+const GLOW_COLORS = [
+  "rgba(220,40,40,0.07)",
+  "rgba(220,40,40,0.05)",
+  "rgba(220,40,40,0.07)",
+  "rgba(200,140,40,0.06)",
+  "rgba(220,40,40,0.07)",
+  "rgba(220,40,40,0.05)",
+] as const;
+
 const N = BENEFICIOS.length;
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 export default function GiroBeneficios() {
   const sectionRef = useRef<HTMLElement>(null);
   const mobileSectionRef = useRef<HTMLElement>(null);
+  const motoDesktopRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileProgress, setMobileProgress] = useState(0);
   const [reduce] = useState(() =>
     typeof window !== "undefined" ? prefiereMenosMovimiento() : false,
   );
 
-  /* ── Progreso de scroll con ScrollTrigger (más eficiente que rAF) ────── */
+  /* ── Desktop: progreso de scroll ────────────────────────────────────── */
   useEffect(() => {
     if (!sectionRef.current || reduce) return;
     const ctx = gsap.context(() => {
@@ -41,15 +52,14 @@ export default function GiroBeneficios() {
     return () => ctx.revert();
   }, [reduce]);
 
-  /* ── Mobile: la moto gira según el scroll de la sección por el viewport ── */
+  /* ── Mobile: progreso de scroll (mismo patrón sticky que desktop) ─── */
   useEffect(() => {
     if (!mobileSectionRef.current || reduce) return;
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: mobileSectionRef.current,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 0,
+        start: "top top",
+        end: "bottom bottom",
         onUpdate: (self) => setMobileProgress(self.progress),
       });
     }, mobileSectionRef);
@@ -57,15 +67,28 @@ export default function GiroBeneficios() {
   }, [reduce]);
 
   const progreso = reduce ? 0 : scrollProgress;
-  /* Beneficio activo según el tramo de scroll (1 beneficio por tramo). */
   const activoIdx = Math.min(N - 1, Math.floor(progreso * N));
   const activo = BENEFICIOS[activoIdx];
+
+  const mobileProgreso = reduce ? 0 : mobileProgress;
+  const activoMobileIdx = Math.min(N - 1, Math.floor(mobileProgreso * N));
+  const activoMobile = BENEFICIOS[activoMobileIdx];
+
+  /* ── Desktop: moto pan lateral sutil al cambiar de beneficio ───────── */
+  useEffect(() => {
+    if (!motoDesktopRef.current || reduce) return;
+    const xTarget = activoIdx % 2 === 0 ? "2%" : "-2%";
+    gsap.to(motoDesktopRef.current, {
+      x: xTarget,
+      duration: 1.2,
+      ease: "expo.out",
+    });
+  }, [activoIdx, reduce]);
 
   return (
     <>
       {/* ══════════════════════════════════════════════════════════════════
           DESKTOP ≥768px — pin largo: moto girando 360 + beneficio activo
-          que cambia al scrollear (estilo Zero / Apple)
           ══════════════════════════════════════════════════════════════════ */}
       <section
         ref={sectionRef}
@@ -75,6 +98,16 @@ export default function GiroBeneficios() {
         style={{ height: `${N * 100}vh` }}
       >
         <div className="grain sticky top-0 flex h-dvh flex-col overflow-hidden bg-black">
+
+          {/* Glow radial animado detrás de la moto */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 transition-all duration-700"
+            style={{
+              background: `radial-gradient(ellipse 60% 70% at 50% 50%, ${GLOW_COLORS[activoIdx]} 0%, transparent 70%)`,
+            }}
+          />
+
           {/* Encabezado fijo arriba-izquierda */}
           <div className="relative z-20 px-8 pt-16 xl:px-16">
             <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
@@ -88,8 +121,9 @@ export default function GiroBeneficios() {
             </h2>
           </div>
 
-          {/* Moto girando 360 — ocupa el centro, gira a lo largo de toda la sección */}
+          {/* Moto girando 360 — centro, pan lateral sutil por beneficio */}
           <div
+            ref={motoDesktopRef}
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
           >
@@ -102,7 +136,7 @@ export default function GiroBeneficios() {
             />
           </div>
 
-          {/* Beneficio activo — grande, abajo-izquierda, cambia con el scroll */}
+          {/* Beneficio activo — grande, abajo-izquierda */}
           <div className="relative z-20 mt-auto px-8 pb-20 xl:px-16">
             <div className="min-h-[200px]">
               <AnimatePresence mode="wait">
@@ -156,74 +190,109 @@ export default function GiroBeneficios() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          MOBILE <768px — apilado con reveal, títulos grandes
+          MOBILE <768px — STICKY: moto en centro, beneficios cambian
+          con el scroll. Patrón Zero Motorcycles exacto.
           ══════════════════════════════════════════════════════════════════ */}
       <section
         ref={mobileSectionRef}
         id="giro-beneficios-mobile"
         aria-label="Por qué Red Motos"
-        className="block bg-black py-20 md:hidden"
+        className="relative block md:hidden"
+        style={{ height: `${N * 100}vh` }}
       >
-        <div className="px-5">
-          {/* Encabezado con entrada */}
-          <motion.div
-            initial={reduce ? { opacity: 1 } : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: reduce ? 0 : 0.8, ease: EASE }}
-          >
-            <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
-              ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
-            </p>
-            <h2
-              className="headline-display mb-10 text-white"
-              style={{ fontSize: "clamp(30px, 8vw, 48px)" }}
+        <div className="sticky top-0 h-dvh overflow-hidden bg-black">
+
+          {/* Glow radial animado detrás de la moto */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 transition-all duration-700"
+            style={{
+              background: `radial-gradient(ellipse 80% 55% at 50% 52%, ${GLOW_COLORS[activoMobileIdx]} 0%, transparent 65%)`,
+            }}
+          />
+
+          {/* Encabezado — arriba izquierda */}
+          <div className="absolute left-0 right-0 top-0 z-20 px-5 pt-10">
+            <p
+              className="label-mono"
+              style={{ color: "var(--accent)", fontSize: "11px" }}
             >
               POR QUÉ RED MOTOS
-            </h2>
-          </motion.div>
+            </p>
+          </div>
 
-          {/* Moto arriba — gira con el scroll de la sección */}
-          <div aria-hidden="true" className="pointer-events-none mb-14">
+          {/* Moto STICKY centrada — gira con el scroll */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
             <Viewer360
               slug="re-super-meteor-650-celestial"
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
-              progreso={reduce ? 0.35 : mobileProgress}
-              className="mx-auto w-full max-w-[380px]"
+              progreso={reduce ? 0.35 : mobileProgreso}
+              className="w-[120%] max-w-none translate-x-[8%]"
             />
           </div>
 
-          {/* Beneficios apilados grandes con reveal más rápido y dramático */}
-          <div className="flex flex-col gap-12">
-            {BENEFICIOS.map((b) => (
+          {/* Gradientes para enmarcar la moto (arriba y abajo) */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32"
+            style={{ background: "linear-gradient(to bottom, black 0%, transparent 100%)" }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-48"
+            style={{ background: "linear-gradient(to top, black 0%, transparent 100%)" }}
+          />
+
+          {/* Beneficio activo — abajo, sobre el gradiente inferior */}
+          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-14">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={b.num}
-                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 60, x: -16 }}
-                whileInView={{ opacity: 1, y: 0, x: 0 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: reduce ? 0 : 0.75, ease: EASE }}
+                key={activoMobile.num}
+                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 32, x: -8 }}
+                animate={{ opacity: 1, y: 0, x: 0 }}
+                exit={reduce ? { opacity: 1 } : { opacity: 0, y: -20 }}
+                transition={{ duration: reduce ? 0 : 0.55, ease: EASE }}
               >
                 <span
                   className="label-mono block"
                   style={{ color: "var(--accent)", fontSize: "12px" }}
                 >
-                  {b.num} / {String(N).padStart(2, "0")}
+                  {activoMobile.num} / {String(N).padStart(2, "0")}
                 </span>
                 <h3
                   className="headline-display mt-2 text-white"
-                  style={{ fontSize: "clamp(30px, 9vw, 48px)", lineHeight: 0.98 }}
+                  style={{ fontSize: "clamp(36px, 10vw, 52px)", lineHeight: 0.95 }}
                 >
-                  {b.titulo}
+                  {activoMobile.titulo}
                 </h3>
                 <p
                   className="mt-3 leading-relaxed"
-                  style={{ color: "var(--fg-muted)", fontSize: "16px" }}
+                  style={{ color: "var(--fg-muted)", fontSize: "15px" }}
                 >
-                  {b.desc}
+                  {activoMobile.desc}
                 </p>
               </motion.div>
-            ))}
+            </AnimatePresence>
+
+            {/* Indicador de pasos */}
+            <div className="mt-5 flex items-center gap-2">
+              {BENEFICIOS.map((b, i) => (
+                <span
+                  key={b.num}
+                  aria-hidden="true"
+                  className="h-[2px] rounded-full transition-all duration-300"
+                  style={{
+                    width: i === activoMobileIdx ? "28px" : "14px",
+                    background:
+                      i === activoMobileIdx ? "var(--accent)" : "rgba(255,255,255,0.2)",
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
