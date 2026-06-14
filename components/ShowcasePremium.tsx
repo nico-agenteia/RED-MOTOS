@@ -200,10 +200,12 @@ function PanelModelo({
   modelo,
   reducida,
   className = "",
+  mostrarHermanos = true,
 }: {
   modelo: Modelo;
   reducida: boolean;
   className?: string;
+  mostrarHermanos?: boolean;
 }) {
   return (
     <div className={`flex w-full flex-col ${className}`}>
@@ -223,21 +225,23 @@ function PanelModelo({
         {modelo.nombre}
       </h2>
 
-      {/* Hermanos fantasma */}
-      <ul
-        aria-label="Otros modelos de la familia"
-        className="mt-5 flex flex-col gap-1 md:items-end"
-      >
-        {modelo.hermanos.map((h, i) => (
-          <li
-            key={h}
-            className="headline-display text-white/20 transition-opacity duration-200 hover:text-white/45"
-            style={{ fontSize: `${Math.max(20, 52 - i * 10)}px`, lineHeight: 1.05 }}
-          >
-            {h}
-          </li>
-        ))}
-      </ul>
+      {/* Hermanos fantasma — solo donde hay espacio (desktop) */}
+      {mostrarHermanos && (
+        <ul
+          aria-label="Otros modelos de la familia"
+          className="mt-5 flex flex-col gap-1 md:items-end"
+        >
+          {modelo.hermanos.map((h, i) => (
+            <li
+              key={h}
+              className="headline-display text-white/20 transition-opacity duration-200 hover:text-white/45"
+              style={{ fontSize: `${Math.max(20, 52 - i * 10)}px`, lineHeight: 1.05 }}
+            >
+              {h}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* Línea divisoria + specs */}
       <div className="mt-10 w-full">
@@ -525,7 +529,11 @@ function ShowcaseMobile({ reducida }: { reducida: boolean }) {
                 {String(i + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}
               </span>
             </div>
-            <PanelModelo modelo={modelo} reducida={reducida} />
+            <PanelModelo
+              modelo={modelo}
+              reducida={reducida}
+              mostrarHermanos={false}
+            />
           </div>
         </article>
       ))}
