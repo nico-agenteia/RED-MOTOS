@@ -231,7 +231,7 @@ export default function GiroBeneficios() {
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={reduce ? 0.35 : mobileProgreso}
-              className="w-[120%] max-w-none translate-x-[8%]"
+              className="w-full max-w-[380px]"
             />
           </div>
 
