@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { gsap, prefiereMenosMovimiento } from "@/lib/gsap-setup";
+import { gsap, ScrollTrigger, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 import { linkWhatsApp } from "@/lib/config";
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -275,44 +275,66 @@ function PanelModelo({
 
 function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
   const [indice, setIndice] = useState(0);
 
-  // Calcular índice activo según scroll (misma técnica que Hero.tsx).
+  // ScrollTrigger: índice activo + progress bar
   useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const el = wrapperRef.current;
-        if (!el) return;
-        const { top, height } = el.getBoundingClientRect();
-        const winH = window.innerHeight;
-        const denom = height - winH || 1;
-        const progress = Math.max(0, Math.min(1, -top / denom));
-        const idx = Math.min(N - 1, Math.floor(progress * N));
-        setIndice(idx);
+    if (!wrapperRef.current) return;
+    const ctx = gsap.context(() => {
+      // Barra de progreso lateral (scaleX 0 → 1 mientras scrolleas el showcase)
+      if (progressBarRef.current) {
+        gsap.fromTo(
+          progressBarRef.current,
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            ease: "linear",
+            scrollTrigger: {
+              trigger: wrapperRef.current,
+              start: "top top",
+              end: "bottom bottom",
+              scrub: 0,
+            },
+          },
+        );
+      }
+
+      // Índice del modelo activo
+      ScrollTrigger.create({
+        trigger: wrapperRef.current,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => {
+          setIndice(Math.min(N - 1, Math.floor(self.progress * N)));
+        },
       });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
+    }, wrapperRef);
+
+    return () => ctx.revert();
   }, []);
+
+  // Transición suave del color de fondo cuando cambia el modelo
+  useEffect(() => {
+    if (!bgRef.current || reducida) return;
+    gsap.to(bgRef.current, {
+      backgroundColor: MODELOS[indice].bg,
+      duration: 0.7,
+      ease: "power2.inOut",
+    });
+  }, [indice, reducida]);
 
   const modelo = MODELOS[indice];
 
   return (
     /* Contenedor exterior tall que da el scroll space */
     <div ref={wrapperRef} style={{ height: `${N * 100}vh` }} className="relative">
-      {/* Contenedor sticky — fondo CONSTANTE */}
+      {/* Contenedor sticky — fondo dinámico por modelo */}
       <div
-        className="sticky top-0 h-dvh overflow-hidden bg-black"
-        style={{
-          /* Fondo CONSTANTE 100% plano — solo cambia la moto, nunca el fondo. */
-          background: "#0A0A0A",
-        }}
+        ref={bgRef}
+        className="sticky top-0 h-dvh overflow-hidden"
+        style={{ backgroundColor: MODELOS[0].bg }}
       >
         {/* Grano de textura */}
         <div
@@ -323,6 +345,18 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
             backgroundSize: "180px 180px",
           }}
         />
+
+        {/* Barra de progreso — patrón Zero Motorcycles */}
+        <div
+          aria-hidden="true"
+          className="absolute bottom-8 left-6 hidden h-px w-16 overflow-hidden bg-white/15 lg:block"
+        >
+          <div
+            ref={progressBarRef}
+            className="h-full w-full origin-left bg-white/70"
+            style={{ transform: "scaleX(0)" }}
+          />
+        </div>
 
         {/* Barra lateral: línea + familia rotada */}
         <div

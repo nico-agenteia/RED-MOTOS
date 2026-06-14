@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Viewer360 from "./Viewer360";
-import { prefiereMenosMovimiento } from "@/lib/gsap-setup";
+import { gsap, ScrollTrigger, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 
 /* ── Datos de los 6 beneficios ──────────────────────────────────────── */
 const BENEFICIOS = [
@@ -25,26 +25,19 @@ export default function GiroBeneficios() {
     typeof window !== "undefined" ? prefiereMenosMovimiento() : false,
   );
 
-  /* ── Progreso de scroll dentro de la sección sticky ────────────────── */
+  /* ── Progreso de scroll con ScrollTrigger (más eficiente que rAF) ────── */
   useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const section = sectionRef.current;
-        if (!section) return;
-        const { top, height } = section.getBoundingClientRect();
-        const denom = height - window.innerHeight || 1;
-        setScrollProgress(Math.max(0, Math.min(1, -top / denom)));
+    if (!sectionRef.current || reduce) return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: sectionRef.current,
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: (self) => setScrollProgress(self.progress),
       });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [reduce]);
 
   const progreso = reduce ? 0 : scrollProgress;
   /* Beneficio activo según el tramo de scroll (1 beneficio por tramo). */

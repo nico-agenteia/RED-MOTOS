@@ -23,6 +23,7 @@ import {
 } from "framer-motion";
 import { linkWhatsApp, MENSAJE_WSP_GENERICO, NEGOCIO } from "@/lib/config";
 import { frames360 } from "@/lib/frames360";
+import { gsap, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 
 const SLUG = "sz-gsx-r-1000r";
 const FALLBACK_IMG = "/motos/GSX-R1000R.png";
@@ -292,11 +293,68 @@ function HeroCtas() {
 
 /**
  * HeroEstatico — versión sin scroll-scrub (sin frames o reduced-motion).
- * Misma estética: moto centrada a pantalla, glow rojo, titular y CTAs.
+ * Misma estética pero con intro GSAP premium: títulos entran desde abajo
+ * con pan lateral (±26vw desktop / ±16vw mobile), igual que Zero Motorcycles.
  */
 function HeroEstatico() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const motoRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (prefiereMenosMovimiento()) return;
+    const isMobile = window.innerWidth < 768;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ delay: 0.1 });
+
+      // Moto: aparece con leve scale-in
+      tl.fromTo(
+        motoRef.current,
+        { opacity: 0, scale: 0.97 },
+        { opacity: 0.9, scale: 1, duration: 1.4, ease: "power2.out" },
+        0,
+      );
+
+      // Claim label: sube desde abajo
+      tl.fromTo(
+        ".hero-static-claim",
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.75, ease: "power2.out" },
+        0.25,
+      );
+
+      // H1: entra desde abajo + pan lateral simultáneo (patrón Zero)
+      tl.fromTo(
+        ".hero-static-h1",
+        { opacity: 0, y: 90 },
+        { opacity: 1, y: 0, duration: 2, ease: "expo.out" },
+        0.1,
+      );
+      tl.from(
+        ".hero-static-h1",
+        {
+          x: isMobile ? "16vw" : "26vw",
+          duration: 2.8,
+          ease: "expo.out",
+        },
+        0.55,
+      );
+
+      // CTAs: suben desde abajo con delay
+      tl.fromTo(
+        ".hero-static-ctas",
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.75, ease: "power2.out" },
+        0.45,
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id="hero"
       aria-label={`Portada ${NEGOCIO.nombre}`}
       className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-black pt-16"
@@ -311,42 +369,31 @@ function HeroEstatico() {
         }}
       />
 
-      {/* Moto centrada */}
+      {/* Moto centrada — opacity 0 inicial, GSAP la anima */}
       <img
+        ref={motoRef}
         src={FALLBACK_IMG}
         alt="Suzuki GSX-R 1000R"
         aria-hidden="true"
-        className="absolute left-1/2 top-1/2 z-0 w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-90"
+        className="absolute left-1/2 top-1/2 z-0 w-[92vw] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 object-contain"
+        style={{ opacity: 0 }}
       />
 
       <div className="relative z-10 flex flex-col items-center px-6 text-center">
-        <motion.span
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE }}
-          className="label-mono mb-6"
-        >
+        <span className="hero-static-claim label-mono mb-6" style={{ opacity: 0 }}>
           {NEGOCIO.claim} · Punto oficial Royal Enfield
-        </motion.span>
+        </span>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.05, ease: EASE }}
-          className="headline-display text-white"
-          style={{ fontSize: "clamp(48px, 9vw, 104px)", lineHeight: 0.92 }}
+        <h1
+          className="hero-static-h1 headline-display text-white"
+          style={{ fontSize: "clamp(48px, 9vw, 104px)", lineHeight: 0.92, opacity: 0 }}
         >
           Mueve tu mundo.
-        </motion.h1>
+        </h1>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
-          className="mt-9"
-        >
+        <div className="hero-static-ctas mt-9" style={{ opacity: 0 }}>
           <HeroCtas />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
