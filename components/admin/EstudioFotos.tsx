@@ -219,7 +219,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
                 alt="Foto procesada por IA"
                 width={520}
                 height={520}
-                className="aspect-square w-full rounded-lg object-cover"
+                className="aspect-square w-full rounded-lg bg-black object-contain p-2"
               />
               <button
                 type="button"
@@ -235,7 +235,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
               alt="Preview de la foto subida"
               width={520}
               height={520}
-              className="aspect-square w-full rounded-lg object-cover"
+              className="aspect-square w-full rounded-lg bg-black object-contain p-2"
             />
           ) : (
             <div className="flex aspect-square items-center justify-center rounded-lg bg-black">

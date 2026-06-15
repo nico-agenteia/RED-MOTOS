@@ -132,10 +132,10 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: "google/nano-banana-edit",
-        taskType: "image-to-image",
-        inputImageUrl,
-        prompt: PROMPTS[estilo],
-        negativePrompt: "blurry, low quality, watermark, text overlay, logo",
+        input: {
+          prompt: PROMPTS[estilo],
+          image_urls: [inputImageUrl],
+        },
       }),
     });
 
