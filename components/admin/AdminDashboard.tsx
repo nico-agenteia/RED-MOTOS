@@ -3,20 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import MotoForm from "./MotoForm";
-import GeneradorPost from "./GeneradorPost";
 import EstudioFotos from "./EstudioFotos";
 import BandejaLeads from "./BandejaLeads";
 import { formatCLP } from "@/lib/utils";
 import type { Moto } from "@/lib/tipos";
 
-type Seccion = "stock" | "leads" | "posts" | "fotos";
+type Seccion = "stock" | "leads" | "fotos";
 
 const POR_PAGINA = 8;
 
 const SECCIONES: { id: Seccion; etiqueta: string }[] = [
   { id: "stock", etiqueta: "Stock" },
   { id: "leads", etiqueta: "Leads" },
-  { id: "posts", etiqueta: "Generador de Posts" },
   { id: "fotos", etiqueta: "Estudio de Fotos" },
 ];
 
@@ -297,7 +295,6 @@ export default function AdminDashboard() {
           )}
 
           {seccion === "leads" && <BandejaLeads />}
-          {seccion === "posts" && <GeneradorPost />}
           {seccion === "fotos" && (
             <EstudioFotos
               onGuardarEnCatalogo={(url) => {
