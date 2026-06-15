@@ -6,9 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CATALOGO, MARCAS_CATALOGO } from "@/lib/catalogo";
 import { formatCLP } from "@/lib/utils";
 import { linkWhatsApp } from "@/lib/config";
-import type { Moto } from "@/lib/tipos";
+import type { Marca, Moto } from "@/lib/tipos";
 
-type Filtro = "Todos" | "Con descuento" | (typeof MARCAS_CATALOGO)[number];
+type Filtro = "Todos" | "Con descuento" | Marca;
 
 /** Fondo sólido muteado por marca (familia oscura, estilo Zero). */
 const TINTE_MARCA: Record<string, string> = {
@@ -139,35 +139,48 @@ function CardMoto({ moto }: { moto: Moto }) {
   );
 }
 
-export default function Catalogo() {
+interface CatalogoProps {
+  /** Motos desde Supabase; si no se pasa, usa el array estático como fallback. */
+  motos?: Moto[];
+}
+
+export default function Catalogo({ motos: motosProp }: CatalogoProps = {}) {
+  const catalogo = motosProp ?? CATALOGO;
   const [filtro, setFiltro] = useState<Filtro>("Todos");
 
+  const marcasPresentes = useMemo(() => {
+    const seen = new Set<Marca>();
+    const out: Marca[] = [];
+    for (const m of catalogo) {
+      if (!seen.has(m.marca)) { seen.add(m.marca); out.push(m.marca); }
+    }
+    return out;
+  }, [catalogo]);
+
   const chips: Filtro[] = useMemo(
-    () => ["Con descuento", "Todos", ...MARCAS_CATALOGO],
-    [],
+    () => ["Con descuento", "Todos", ...marcasPresentes],
+    [marcasPresentes],
   );
 
   const motos = useMemo(() => {
     const base =
       filtro === "Todos"
-        ? CATALOGO
+        ? catalogo
         : filtro === "Con descuento"
-          ? CATALOGO.filter((m) => m.precioBono !== null)
-          : CATALOGO.filter((m) => m.marca === filtro);
+          ? catalogo.filter((m) => m.precioBono !== null)
+          : catalogo.filter((m) => m.marca === filtro);
 
-    // Las motos con descuento (bono) van primero; el resto conserva su orden
-    // original (Array.sort es estable). Se copia para no mutar CATALOGO.
     return [...base].sort(
       (a, b) =>
         (a.precioBono !== null ? 0 : 1) - (b.precioBono !== null ? 0 : 1),
     );
-  }, [filtro]);
+  }, [filtro, catalogo]);
 
   return (
     <section id="catalogo" aria-label="Catálogo de motos" className="bg-black py-24">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <p className="label-mono mb-3">
-          {CATALOGO.length} modelos · {MARCAS_CATALOGO.length} marcas · stock real
+          {catalogo.length} modelos · {marcasPresentes.length} marcas · stock real
         </p>
         <h2
           className="headline-display text-white"

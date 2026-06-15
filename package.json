@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "@supabase/supabase-js": "^2.108.1",
     "framer-motion": "^11.11.9",
     "gsap": "^3.12.5",
     "next": "^14.2.35",
@@ -20,11 +22,15 @@
   },
   "devDependencies": {
     "@types/node": "^20.16.11",
+    "@types/pg": "^8.20.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^17.4.2",
+    "pg": "^8.21.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
+    "tsx": "^4.22.4",
     "typescript": "^5.6.3"
   }
 }

@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { CATALOGO } from "@/lib/catalogo";
-
-// TODO: conectar KIE_API_KEY en .env.local — sin la key, los endpoints
-// /api/generar-post y /api/kie-status responden con un mensaje claro.
+import type { Moto } from "@/lib/tipos";
 
 type Estilo = "catalogo" | "redes";
 
@@ -17,7 +14,8 @@ interface Resultado {
 const POLL_MS = 3000;
 
 export default function GeneradorPost() {
-  const [motoId, setMotoId] = useState(CATALOGO[0].id);
+  const [motos, setMotos] = useState<Moto[]>([]);
+  const [motoId, setMotoId] = useState("");
   const [estilo, setEstilo] = useState<Estilo>("catalogo");
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +23,23 @@ export default function GeneradorPost() {
   const [captionCopiado, setCaptionCopiado] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const moto = CATALOGO.find((m) => m.id === motoId) ?? CATALOGO[0];
+  const cargarMotos = useCallback(async () => {
+    try {
+      const res = await fetch("/api/motos");
+      const datos = await res.json();
+      const lista: Moto[] = datos.motos ?? [];
+      setMotos(lista);
+      if (lista.length > 0) setMotoId(lista[0].id);
+    } catch {
+      // silencioso — el selector queda vacío
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargarMotos();
+  }, [cargarMotos]);
+
+  const moto = motos.find((m) => m.id === motoId) ?? motos[0];
 
   useEffect(() => {
     return () => {
@@ -105,7 +119,7 @@ export default function GeneradorPost() {
               onChange={(e) => setMotoId(e.target.value)}
               className="min-h-[44px] rounded-md border border-line bg-surface-2 px-4 text-sm text-white focus:border-red-500 focus:outline-none"
             >
-              {CATALOGO.map((m) => (
+              {motos.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.marca} {m.modelo}
                 </option>

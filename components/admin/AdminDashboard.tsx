@@ -5,15 +5,17 @@ import { motion } from "framer-motion";
 import MotoForm from "./MotoForm";
 import GeneradorPost from "./GeneradorPost";
 import EstudioFotos from "./EstudioFotos";
+import BandejaLeads from "./BandejaLeads";
 import { formatCLP } from "@/lib/utils";
 import type { Moto } from "@/lib/tipos";
 
-type Seccion = "stock" | "posts" | "fotos";
+type Seccion = "stock" | "leads" | "posts" | "fotos";
 
 const POR_PAGINA = 8;
 
 const SECCIONES: { id: Seccion; etiqueta: string }[] = [
   { id: "stock", etiqueta: "Stock" },
+  { id: "leads", etiqueta: "Leads" },
   { id: "posts", etiqueta: "Generador de Posts" },
   { id: "fotos", etiqueta: "Estudio de Fotos" },
 ];
@@ -25,6 +27,8 @@ export default function AdminDashboard() {
   const [busqueda, setBusqueda] = useState("");
   const [pagina, setPagina] = useState(1);
   const [formAbierto, setFormAbierto] = useState(false);
+  const [motoEditar, setMotoEditar] = useState<Moto | null>(null);
+  const [imagenUrlDesdeEstudio, setImagenUrlDesdeEstudio] = useState<string | undefined>();
 
   const cargarMotos = useCallback(async () => {
     setCargando(true);
@@ -139,6 +143,21 @@ export default function AdminDashboard() {
         <main className="flex-1 p-6 md:p-8">
           {seccion === "stock" && (
             <div>
+              {/* Cards de métricas */}
+              <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {[
+                  { etiqueta: "Total motos", valor: motos.length },
+                  { etiqueta: "Con descuento", valor: motos.filter((m) => m.precioBono !== null).length },
+                  { etiqueta: "Destacadas", valor: motos.filter((m) => m.destacado).length },
+                  { etiqueta: "Marcas", valor: new Set(motos.map((m) => m.marca)).size },
+                ].map((card) => (
+                  <div key={card.etiqueta} className="rounded-xl border border-line bg-surface-2 p-4">
+                    <p className="label-mono !text-[11px]">{card.etiqueta}</p>
+                    <p className="font-display mt-1 text-3xl font-bold text-white">{card.valor}</p>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="font-display text-3xl font-bold uppercase text-white">
                   Stock ({filtradas.length})
@@ -157,7 +176,7 @@ export default function AdminDashboard() {
                   />
                   <motion.button
                     type="button"
-                    onClick={() => setFormAbierto(true)}
+                    onClick={() => { setMotoEditar(null); setFormAbierto(true); }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     className="inline-flex min-h-[44px] items-center rounded-md bg-red-500 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
@@ -226,13 +245,22 @@ export default function AdminDashboard() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <button
-                              type="button"
-                              onClick={() => eliminar(m)}
-                              className="inline-flex min-h-[36px] items-center rounded-md px-3 text-xs font-medium text-muted transition-colors duration-200 hover:bg-red-500/10 hover:text-red-500"
-                            >
-                              Eliminar
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => { setMotoEditar(m); setFormAbierto(true); }}
+                                className="inline-flex min-h-[36px] items-center rounded-md px-3 text-xs font-medium text-muted transition-colors duration-200 hover:bg-white/10 hover:text-white"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => eliminar(m)}
+                                className="inline-flex min-h-[36px] items-center rounded-md px-3 text-xs font-medium text-muted transition-colors duration-200 hover:bg-red-500/10 hover:text-red-500"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -268,15 +296,30 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {seccion === "leads" && <BandejaLeads />}
           {seccion === "posts" && <GeneradorPost />}
-          {seccion === "fotos" && <EstudioFotos />}
+          {seccion === "fotos" && (
+            <EstudioFotos
+              onGuardarEnCatalogo={(url) => {
+                setMotoEditar(null);
+                setImagenUrlDesdeEstudio(url);
+                setFormAbierto(true);
+              }}
+            />
+          )}
         </main>
       </div>
 
       <MotoForm
         abierto={formAbierto}
-        onCerrar={() => setFormAbierto(false)}
+        onCerrar={() => {
+          setFormAbierto(false);
+          setMotoEditar(null);
+          setImagenUrlDesdeEstudio(undefined);
+        }}
         onGuardada={() => void cargarMotos()}
+        motoEditar={motoEditar}
+        imagenUrlInicial={imagenUrlDesdeEstudio}
       />
     </div>
   );

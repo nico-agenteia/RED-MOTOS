@@ -32,18 +32,22 @@ export interface Moto {
   marca: Marca;
   modelo: string;
   segmento: Segmento;
-  /** Cilindrada en cc — derivada del nombre del modelo. */
+  /** Cilindrada en cc. */
   cc: number;
   /** Precio de lista en CLP. */
   precioLista: number;
-  /** Precio final en CLP si hay bono/descuento vigente; null si no hay. */
+  /** Precio final en CLP si hay bono vigente; null si no hay. */
   precioBono: number | null;
-  /** Ruta de la foto de producto en /public. */
+  /** Fecha de vencimiento del bono (ISO string); null si no aplica. */
+  bonoVence: string | null;
+  /** URL de la imagen de producto (Storage o /public). */
   img: string;
-  /** Usos recomendados — alimenta al Recomendador IA. */
   usos: Uso[];
-  /** Apta para primera moto. */
   aptaPrincipiante: boolean;
+  /** Aparece en el carrusel ShowcasePremium. */
+  destacado: boolean;
+  /** Orden manual en el catálogo (menor = primero). */
+  orden: number;
 }
 
 export interface LeadRecomendador {
@@ -56,3 +60,18 @@ export interface LeadRecomendador {
 }
 
 export type LeadScore = "hot" | "warm" | "cold";
+
+export interface Lead {
+  id: string;
+  origen: "recomendador" | "simulador" | "contacto";
+  nombre?: string;
+  whatsapp?: string;
+  presupuesto?: string;
+  uso?: string;
+  experiencia?: string;
+  urgencia?: string;
+  score?: LeadScore;
+  payload?: Record<string, unknown>;
+  atendido: boolean;
+  creadoEn: string;
+}

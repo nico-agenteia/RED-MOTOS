@@ -198,6 +198,18 @@ export default function SimuladorCuotas() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              onClick={() => {
+                void fetch("/api/leads", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    origen: "simulador",
+                    presupuesto: formatCLP(valor),
+                    score: "warm",
+                    payload: { valor, pie, piePct, plazo, cuota },
+                  }),
+                }).catch(() => {});
+              }}
               className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
             >
               Cotizar financiamiento →

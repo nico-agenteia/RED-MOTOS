@@ -11,7 +11,11 @@ type Estilo = "catalogo" | "redes";
 
 const POLL_MS = 3000;
 
-export default function EstudioFotos() {
+interface EstudioFotosProps {
+  onGuardarEnCatalogo?: (imagenUrl: string) => void;
+}
+
+export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -219,6 +223,7 @@ export default function EstudioFotos() {
               />
               <button
                 type="button"
+                onClick={() => onGuardarEnCatalogo?.(resultadoUrl!)}
                 className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-500 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
               >
                 Guardar al catálogo

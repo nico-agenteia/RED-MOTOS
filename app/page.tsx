@@ -12,8 +12,15 @@ import Clientes from "@/components/Clientes";
 import Beneficios from "@/components/Beneficios";
 import Contacto from "@/components/Contacto";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { getMotos } from "@/lib/motos-data";
 
-export default function Home() {
+// ISR: regenera cada 5 minutos. El admin dispara revalidación on-demand
+// al guardar/editar/eliminar motos, así los cambios se publican al instante.
+export const revalidate = 300;
+
+export default async function Home() {
+  const motos = await getMotos();
+
   return (
     <>
       <Nav />
@@ -23,7 +30,7 @@ export default function Home() {
         <GiroBeneficios />
         <SalaRoyalEnfield />
         <SalaSuzuki />
-        <Catalogo />
+        <Catalogo motos={motos} />
         <Marcas />
         <RecomendadorIA />
         <SimuladorCuotas />

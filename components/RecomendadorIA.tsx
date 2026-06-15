@@ -130,8 +130,26 @@ export default function RecomendadorIA() {
 
   function calcularResultado() {
     if (!presupuesto || !uso || !experiencia) return;
-    setRecomendada(recomendarMoto(presupuesto, uso, experiencia));
+    const moto = recomendarMoto(presupuesto, uso, experiencia);
+    setRecomendada(moto);
     setPaso(5);
+
+    // Capturar lead en segundo plano (no bloquear la UX)
+    void fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        origen: "recomendador",
+        nombre: nombre.trim() || undefined,
+        whatsapp: whatsapp.trim() || undefined,
+        presupuesto,
+        uso,
+        experiencia,
+        urgencia: urgencia ?? undefined,
+        score: urgencia ? scoreLead(urgencia) : "cold",
+        payload: { modeloRecomendado: moto ? `${moto.marca} ${moto.modelo}` : null },
+      }),
+    }).catch(() => {/* silencioso — no interrumpir el flujo */});
   }
 
   const score = urgencia ? scoreLead(urgencia) : "cold";
