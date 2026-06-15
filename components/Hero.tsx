@@ -232,7 +232,7 @@ export default function Hero() {
           <motion.div
             ref={introRef}
             style={{ opacity: introOpacity }}
-            className="pointer-events-none absolute left-0 right-0 top-[14%] z-20 px-6 text-center"
+            className="pointer-events-none absolute left-0 right-0 top-[22%] z-20 px-6 text-center"
             aria-hidden="true"
           >
             <h2
@@ -250,8 +250,7 @@ export default function Hero() {
           </motion.div>
         )}
 
-        {/* Titulares por ángulo (a partir del segundo; el primero es el intro).
-            Alternan lado: 2º derecha, 3º izquierda… (patrón Zero Motorcycles). */}
+        {/* Titulares por ángulo (a partir del segundo; el primero es el intro) */}
         {estado === "listo" &&
           TITULARES.slice(1).map((t, i) => (
             <TituloAngulo
@@ -261,7 +260,6 @@ export default function Hero() {
               hasta={t.hasta}
               texto={t.texto}
               sub={t.sub}
-              alineacion={i % 2 === 0 ? "derecha" : "izquierda"}
             />
           ))}
 
@@ -287,41 +285,27 @@ export default function Hero() {
   );
 }
 
-/**
- * Titular que se desvanece dentro/fuera en su rango de progreso y se posiciona
- * a un lado (derecha o izquierda) con un pan lateral sutil, estilo Zero.
- */
+/** Titular que se desvanece dentro/fuera en su rango de progreso. */
 function TituloAngulo({
   progreso,
   desde,
   hasta,
   texto,
   sub,
-  alineacion,
 }: {
   progreso: ReturnType<typeof useScroll>["scrollYProgress"];
   desde: number;
   hasta: number;
   texto: string;
   sub: string;
-  alineacion: "derecha" | "izquierda";
 }) {
-  const derecha = alineacion === "derecha";
   const medio = (desde + hasta) / 2;
   const opacity = useTransform(progreso, [desde, medio, hasta], [0, 1, 0]);
   const y = useTransform(progreso, [desde, hasta], [24, -24]);
-  // Pan lateral: entra desde su lado y cruza por el centro al máximo de opacidad.
-  const x = useTransform(
-    progreso,
-    [desde, hasta],
-    derecha ? [40, -40] : [-40, 40],
-  );
   return (
     <motion.div
-      style={{ opacity, y, x }}
-      className={`pointer-events-none absolute top-[24%] z-20 max-w-[74%] sm:max-w-[52%] ${
-        derecha ? "right-[6%] text-right" : "left-[6%] text-left"
-      }`}
+      style={{ opacity, y }}
+      className="pointer-events-none absolute left-0 right-0 top-[22%] z-20 px-6 text-center"
     >
       <h2
         className="headline-display text-white"
