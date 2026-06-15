@@ -32,15 +32,13 @@ export default function GiroBeneficios() {
   const sectionRef = useRef<HTMLElement>(null);
   const mobileSectionRef = useRef<HTMLElement>(null);
   const motoDesktopRef = useRef<HTMLDivElement>(null);
-  const motoDescentRef = useRef<HTMLDivElement>(null);
-  const motoDescentMobileRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileProgress, setMobileProgress] = useState(0);
   const [reduce] = useState(() =>
     typeof window !== "undefined" ? prefiereMenosMovimiento() : false,
   );
 
-  /* ── Desktop: progreso de scroll + descenso de la moto (estilo Zero) ── */
+  /* ── Desktop: progreso de scroll ────────────────────────────────────── */
   useEffect(() => {
     if (!sectionRef.current || reduce) return;
     const ctx = gsap.context(() => {
@@ -50,29 +48,11 @@ export default function GiroBeneficios() {
         end: "bottom bottom",
         onUpdate: (self) => setScrollProgress(self.progress),
       });
-
-      // La moto desciende verticalmente ligada al scroll (scrub).
-      if (motoDescentRef.current) {
-        gsap.fromTo(
-          motoDescentRef.current,
-          { yPercent: -12 },
-          {
-            yPercent: 12,
-            ease: "none",
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: "top top",
-              end: "bottom bottom",
-              scrub: true,
-            },
-          },
-        );
-      }
     }, sectionRef);
     return () => ctx.revert();
   }, [reduce]);
 
-  /* ── Mobile: progreso de scroll + descenso de la moto (estilo Zero) ── */
+  /* ── Mobile: progreso de scroll (mismo patrón sticky que desktop) ─── */
   useEffect(() => {
     if (!mobileSectionRef.current || reduce) return;
     const ctx = gsap.context(() => {
@@ -82,24 +62,6 @@ export default function GiroBeneficios() {
         end: "bottom bottom",
         onUpdate: (self) => setMobileProgress(self.progress),
       });
-
-      // La moto desciende verticalmente ligada al scroll (scrub).
-      if (motoDescentMobileRef.current) {
-        gsap.fromTo(
-          motoDescentMobileRef.current,
-          { yPercent: -9 },
-          {
-            yPercent: 16,
-            ease: "none",
-            scrollTrigger: {
-              trigger: mobileSectionRef.current,
-              start: "top top",
-              end: "bottom bottom",
-              scrub: true,
-            },
-          },
-        );
-      }
     }, mobileSectionRef);
     return () => ctx.revert();
   }, [reduce]);
@@ -135,22 +97,14 @@ export default function GiroBeneficios() {
         className="relative hidden md:block"
         style={{ height: `${N * 100}vh` }}
       >
-        <div
-          className="grain sticky top-0 flex h-dvh flex-col overflow-hidden"
-          style={{
-            // Fondo temático Royal Enfield: estudio granate full-bleed que
-            // funde con el fondo horneado de los frames 360.
-            background:
-              "radial-gradient(ellipse 95% 95% at 50% 46%, #5e3439 0%, #3a2024 55%, #1b1013 100%)",
-          }}
-        >
+        <div className="grain sticky top-0 flex h-dvh flex-col overflow-hidden bg-black">
 
-          {/* Glow radial cálido sutil detrás de la moto */}
+          {/* Glow radial animado detrás de la moto */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 transition-all duration-700"
             style={{
-              background: `radial-gradient(ellipse 60% 70% at 50% 48%, ${GLOW_COLORS[activoIdx]} 0%, transparent 70%)`,
+              background: `radial-gradient(ellipse 60% 70% at 50% 50%, ${GLOW_COLORS[activoIdx]} 0%, transparent 70%)`,
             }}
           />
 
@@ -167,40 +121,20 @@ export default function GiroBeneficios() {
             </h2>
           </div>
 
-          {/* Moto girando 360 — desciende con el scroll (outer) + pan lateral
-              sutil por beneficio (inner). El granate del frame funde con el
-              fondo de la sección. */}
+          {/* Moto girando 360 — centro, pan lateral sutil por beneficio */}
           <div
-            ref={motoDescentRef}
+            ref={motoDesktopRef}
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-10"
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
           >
-            <div
-              ref={motoDesktopRef}
-              className="flex h-full items-center justify-center"
-            >
-              <Viewer360
-                slug="re-super-meteor-650-celestial"
-                fallbackImg="/motos/CELESTIALRED.png"
-                alt="Royal Enfield Super Meteor 650 Celestial"
-                progreso={progreso}
-                className="w-[82%] max-w-[1040px] translate-y-[-2%]"
-              />
-            </div>
+            <Viewer360
+              slug="re-super-meteor-650-celestial"
+              fallbackImg="/motos/CELESTIALRED.png"
+              alt="Royal Enfield Super Meteor 650 Celestial"
+              progreso={progreso}
+              className="w-full max-w-[820px] translate-y-[-4%]"
+            />
           </div>
-
-          {/* Máscaras granate (arriba/abajo) — funden el frame con el fondo y
-              dan legibilidad al encabezado y al texto. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 z-[15] h-36"
-            style={{ background: "linear-gradient(to bottom, #1b1013 0%, transparent 100%)" }}
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[15] h-[42%]"
-            style={{ background: "linear-gradient(to top, #1b1013 0%, #1b1013 16%, transparent 100%)" }}
-          />
 
           {/* Beneficio activo — grande, abajo-izquierda */}
           <div className="relative z-20 mt-auto px-8 pb-20 xl:px-16">
@@ -296,10 +230,8 @@ export default function GiroBeneficios() {
           </div>
 
           {/* Moto STICKY — full-bleed: el granate del frame sangra por los
-              lados y funde con el fondo de la sección (sin bordes de card).
-              Desciende verticalmente ligada al scroll (estilo Zero). */}
+              lados y funde con el fondo de la sección (sin bordes de card). */}
           <div
-            ref={motoDescentMobileRef}
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 bottom-[14%] flex items-center justify-center"
           >
