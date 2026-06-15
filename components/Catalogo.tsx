@@ -143,7 +143,7 @@ export default function Catalogo() {
   const [filtro, setFiltro] = useState<Filtro>("Todos");
 
   const chips: Filtro[] = useMemo(
-    () => ["Todos", ...MARCAS_CATALOGO, "Con descuento"],
+    () => ["Con descuento", "Todos", ...MARCAS_CATALOGO],
     [],
   );
 
@@ -201,17 +201,20 @@ export default function Catalogo() {
           </div>
         </div>
 
-        {/* Grid con layout animation al filtrar */}
-        <motion.div
-          layout
+        {/* Grid: sin layout-animation en el contenedor para evitar que la
+            vista salte al filtrar (la altura ya no se anima). Las tarjetas
+            conservan su entrada/salida. overflow-anchor: none evita que el
+            navegador reancle el scroll durante la transición. */}
+        <div
           className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+          style={{ overflowAnchor: "none" }}
         >
           <AnimatePresence mode="popLayout">
             {motos.map((moto) => (
               <CardMoto key={moto.id} moto={moto} />
             ))}
           </AnimatePresence>
-        </motion.div>
+        </div>
 
         {motos.length === 0 && (
           <p className="mt-12 text-center text-muted">
