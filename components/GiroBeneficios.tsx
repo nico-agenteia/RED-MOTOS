@@ -15,23 +15,39 @@ const BENEFICIOS = [
   { num: "06", titulo: "3 SUCURSALES", desc: "La Florida, La Cisterna y Casa Matriz." },
 ] as const;
 
-/* Colores de glow sutil por beneficio (acento + variación cálida/fría) */
+/* Glow cálido sutil por beneficio detrás de la moto */
 const GLOW_COLORS = [
-  "rgba(220,40,40,0.07)",
-  "rgba(220,40,40,0.05)",
-  "rgba(220,40,40,0.07)",
-  "rgba(200,140,40,0.06)",
-  "rgba(220,40,40,0.07)",
-  "rgba(220,40,40,0.05)",
+  "rgba(220,40,40,0.10)",
+  "rgba(220,40,40,0.08)",
+  "rgba(220,40,40,0.10)",
+  "rgba(200,140,40,0.09)",
+  "rgba(220,40,40,0.10)",
+  "rgba(220,40,40,0.08)",
 ] as const;
 
 const N = BENEFICIOS.length;
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
+/* Fondo oscuro estilo Zero: casi negro con viñeta sutil. */
+const BG_OSCURO =
+  "radial-gradient(ellipse 100% 92% at 50% 44%, #18181a 0%, #0b0b0c 56%, #050506 100%)";
+
+/* Opacidad de un beneficio según el tramo de scroll que le corresponde:
+   1 en el centro de su tramo, desvanece hacia los bordes (cross-fade). */
+function ventana(p: number, i: number) {
+  const seg = 1 / N;
+  const centro = (i + 0.5) * seg;
+  return Math.max(0, Math.min(1, 1 - Math.abs(p - centro) / (seg * 0.72)));
+}
+/* Deriva vertical sutil mientras el beneficio cruza su ventana. */
+function derivaY(p: number, i: number) {
+  const seg = 1 / N;
+  return (p - (i + 0.5) * seg) * -160;
+}
+
 export default function GiroBeneficios() {
   const sectionRef = useRef<HTMLElement>(null);
   const mobileSectionRef = useRef<HTMLElement>(null);
-  const motoDesktopRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileProgress, setMobileProgress] = useState(0);
   const [reduce] = useState(() =>
@@ -52,7 +68,7 @@ export default function GiroBeneficios() {
     return () => ctx.revert();
   }, [reduce]);
 
-  /* ── Mobile: progreso de scroll (mismo patrón sticky que desktop) ─── */
+  /* ── Mobile: progreso de scroll (mismo patrón sticky) ──────────────── */
   useEffect(() => {
     if (!mobileSectionRef.current || reduce) return;
     const ctx = gsap.context(() => {
@@ -68,16 +84,17 @@ export default function GiroBeneficios() {
 
   const progreso = reduce ? 0 : scrollProgress;
   const activoIdx = Math.min(N - 1, Math.floor(progreso * N));
-  const activo = BENEFICIOS[activoIdx];
 
   const mobileProgreso = reduce ? 0 : mobileProgress;
   const activoMobileIdx = Math.min(N - 1, Math.floor(mobileProgreso * N));
   const activoMobile = BENEFICIOS[activoMobileIdx];
+  const izqMobile = activoMobileIdx % 2 === 0;
 
   return (
     <>
       {/* ══════════════════════════════════════════════════════════════════
-          DESKTOP ≥768px — pin largo: moto girando 360 + beneficio activo
+          DESKTOP ≥768px — moto transparente flotando + girando con el scroll,
+          beneficios apareciendo alternados izquierda/derecha (estilo Zero).
           ══════════════════════════════════════════════════════════════════ */}
       <section
         ref={sectionRef}
@@ -86,19 +103,21 @@ export default function GiroBeneficios() {
         className="relative hidden md:block"
         style={{ height: `${N * 100}vh` }}
       >
-        <div className="grain sticky top-0 flex h-dvh flex-col overflow-hidden bg-black">
-
-          {/* Glow radial animado detrás de la moto */}
+        <div
+          className="grain sticky top-0 h-dvh overflow-hidden"
+          style={{ background: BG_OSCURO }}
+        >
+          {/* Glow radial cálido detrás de la moto */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 transition-all duration-700"
             style={{
-              background: `radial-gradient(ellipse 60% 70% at 50% 50%, ${GLOW_COLORS[activoIdx]} 0%, transparent 70%)`,
+              background: `radial-gradient(ellipse 58% 70% at 50% 50%, ${GLOW_COLORS[activoIdx]} 0%, transparent 70%)`,
             }}
           />
 
           {/* Encabezado fijo arriba-izquierda */}
-          <div className="relative z-20 px-8 pt-16 xl:px-16">
+          <div className="absolute left-0 top-0 z-30 px-8 pt-16 xl:px-16">
             <p className="label-mono mb-2" style={{ color: "var(--accent)" }}>
               ROYAL ENFIELD · SUPER METEOR 650 CELESTIAL
             </p>
@@ -110,9 +129,8 @@ export default function GiroBeneficios() {
             </h2>
           </div>
 
-          {/* Moto girando 360 — centro, pan lateral sutil por beneficio */}
+          {/* Moto transparente — centro, gira con el scroll */}
           <div
-            ref={motoDesktopRef}
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
           >
@@ -121,66 +139,76 @@ export default function GiroBeneficios() {
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={progreso}
-              className="w-full max-w-[820px] translate-y-[-4%]"
+              className="w-[72%] max-w-[820px] translate-y-[-2%]"
             />
           </div>
 
-          {/* Beneficio activo — grande, abajo-izquierda */}
-          <div className="relative z-20 mt-auto px-8 pb-20 xl:px-16">
-            <div className="min-h-[200px]">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activo.num}
-                  initial={reduce ? { opacity: 1 } : { opacity: 0, y: 28 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduce ? { opacity: 1 } : { opacity: 0, y: -28 }}
-                  transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
-                  className="max-w-[680px]"
-                >
-                  <span
-                    className="label-mono block"
-                    style={{ color: "var(--accent)", fontSize: "13px" }}
-                  >
-                    {activo.num} / {String(N).padStart(2, "0")}
-                  </span>
-                  <h3
-                    className="headline-display mt-3 text-white"
-                    style={{ fontSize: "clamp(44px, 6vw, 88px)", lineHeight: 0.95 }}
-                  >
-                    {activo.titulo}
-                  </h3>
-                  <p
-                    className="mt-4 max-w-[440px] leading-relaxed"
-                    style={{ color: "var(--fg-muted)", fontSize: "clamp(15px, 1.3vw, 19px)" }}
-                  >
-                    {activo.desc}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Indicador de pasos 01–06 */}
-            <div className="mt-8 flex items-center gap-3">
-              {BENEFICIOS.map((b, i) => (
+          {/* Beneficios alternados — izquierda / derecha, cross-fade por scroll */}
+          {BENEFICIOS.map((b, i) => {
+            const izq = i % 2 === 0;
+            const op = reduce ? (i === activoIdx ? 1 : 0) : ventana(progreso, i);
+            const ty = reduce ? 0 : derivaY(progreso, i);
+            return (
+              <div
+                key={b.num}
+                aria-hidden={op < 0.05}
+                className={`absolute z-20 max-w-[31%] ${
+                  izq
+                    ? "left-[6%] text-left xl:left-[8%]"
+                    : "right-[6%] text-right xl:right-[8%]"
+                }`}
+                style={{
+                  top: izq ? "27%" : "44%",
+                  opacity: op,
+                  transform: `translateY(${ty}px)`,
+                }}
+              >
                 <span
-                  key={b.num}
-                  aria-hidden="true"
-                  className="h-[3px] rounded-full transition-all duration-300"
+                  className="label-mono block"
+                  style={{ color: "var(--accent)", fontSize: "13px" }}
+                >
+                  {b.num} / {String(N).padStart(2, "0")}
+                </span>
+                <h3
+                  className="headline-display mt-3 text-white"
+                  style={{ fontSize: "clamp(40px, 5vw, 78px)", lineHeight: 0.95 }}
+                >
+                  {b.titulo}
+                </h3>
+                <p
+                  className={`mt-4 leading-relaxed ${izq ? "" : "ml-auto"}`}
                   style={{
-                    width: i === activoIdx ? "40px" : "20px",
-                    background:
-                      i === activoIdx ? "var(--accent)" : "var(--surface-2)",
+                    color: "var(--fg-muted)",
+                    fontSize: "clamp(14px, 1.2vw, 18px)",
+                    maxWidth: "360px",
                   }}
-                />
-              ))}
-            </div>
+                >
+                  {b.desc}
+                </p>
+              </div>
+            );
+          })}
+
+          {/* Indicador de pasos 01–06 — abajo centro */}
+          <div className="absolute bottom-10 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3">
+            {BENEFICIOS.map((b, i) => (
+              <span
+                key={b.num}
+                aria-hidden="true"
+                className="h-[3px] rounded-full transition-all duration-300"
+                style={{
+                  width: i === activoIdx ? "40px" : "20px",
+                  background: i === activoIdx ? "var(--accent)" : "var(--surface-2)",
+                }}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          MOBILE <768px — STICKY: moto en centro, beneficios cambian
-          con el scroll. Patrón Zero Motorcycles exacto.
+          MOBILE <768px — moto transparente girando, beneficio activo que
+          alterna lado (izq/der) a medida que fluye el scroll.
           ══════════════════════════════════════════════════════════════════ */}
       <section
         ref={mobileSectionRef}
@@ -191,20 +219,14 @@ export default function GiroBeneficios() {
       >
         <div
           className="sticky top-0 h-dvh overflow-hidden"
-          style={{
-            // Fondo temático Royal Enfield: estudio granate full-bleed que
-            // funde con el fondo horneado de los frames 360.
-            background:
-              "radial-gradient(ellipse 120% 82% at 50% 40%, #5e3439 0%, #3a2024 52%, #1b1013 100%)",
-          }}
+          style={{ background: BG_OSCURO }}
         >
-
           {/* Glow radial cálido sutil detrás de la moto */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 transition-all duration-700"
             style={{
-              background: `radial-gradient(ellipse 80% 55% at 50% 46%, ${GLOW_COLORS[activoMobileIdx]} 0%, transparent 65%)`,
+              background: `radial-gradient(ellipse 85% 55% at 50% 42%, ${GLOW_COLORS[activoMobileIdx]} 0%, transparent 65%)`,
             }}
           />
 
@@ -218,43 +240,43 @@ export default function GiroBeneficios() {
             </p>
           </div>
 
-          {/* Moto STICKY — full-bleed: el granate del frame sangra por los
-              lados y funde con el fondo de la sección (sin bordes de card). */}
+          {/* Moto transparente — centro-superior, gira con el scroll */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 bottom-[14%] flex items-center justify-center"
+            className="pointer-events-none absolute inset-x-0 top-0 bottom-[26%] flex items-center justify-center"
           >
             <Viewer360
               slug="re-super-meteor-650-celestial"
               fallbackImg="/motos/CELESTIALRED.png"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={reduce ? 0.35 : mobileProgreso}
-              className="w-[116%] max-w-none"
+              className="w-[104%] max-w-none"
             />
           </div>
 
-          {/* Máscaras granate (arriba/abajo) — funden los bordes del frame
-              con el fondo y dan legibilidad al texto inferior. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28"
-            style={{ background: "linear-gradient(to bottom, #1b1013 0%, transparent 100%)" }}
-          />
+          {/* Difuminado inferior para legibilidad del texto */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-72"
-            style={{ background: "linear-gradient(to top, #1b1013 0%, #1b1013 28%, transparent 100%)" }}
+            style={{ background: "linear-gradient(to top, #050506 0%, #050506 26%, transparent 100%)" }}
           />
 
-          {/* Beneficio activo — abajo, elevado para librar los botones flotantes */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-28">
+          {/* Beneficio activo — abajo, alterna lado izq/der según el scroll */}
+          <div
+            className={`absolute bottom-0 left-0 right-0 z-20 px-5 pb-28 ${
+              izqMobile ? "text-left" : "text-right"
+            }`}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={activoMobile.num}
-                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 32, x: -8 }}
+                initial={
+                  reduce ? { opacity: 1 } : { opacity: 0, y: 28, x: izqMobile ? -10 : 10 }
+                }
                 animate={{ opacity: 1, y: 0, x: 0 }}
-                exit={reduce ? { opacity: 1 } : { opacity: 0, y: -20 }}
-                transition={{ duration: reduce ? 0 : 0.55, ease: EASE }}
+                exit={reduce ? { opacity: 1 } : { opacity: 0, y: -16 }}
+                transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
+                className={`max-w-[82%] ${izqMobile ? "mr-auto" : "ml-auto"}`}
               >
                 <span
                   className="label-mono block"
@@ -264,7 +286,7 @@ export default function GiroBeneficios() {
                 </span>
                 <h3
                   className="headline-display mt-2 text-white"
-                  style={{ fontSize: "clamp(36px, 10vw, 52px)", lineHeight: 0.95 }}
+                  style={{ fontSize: "clamp(34px, 9.5vw, 50px)", lineHeight: 0.95 }}
                 >
                   {activoMobile.titulo}
                 </h3>
@@ -278,7 +300,11 @@ export default function GiroBeneficios() {
             </AnimatePresence>
 
             {/* Indicador de pasos */}
-            <div className="mt-5 flex items-center gap-2">
+            <div
+              className={`mt-5 flex items-center gap-2 ${
+                izqMobile ? "justify-start" : "justify-end"
+              }`}
+            >
               {BENEFICIOS.map((b, i) => (
                 <span
                   key={b.num}

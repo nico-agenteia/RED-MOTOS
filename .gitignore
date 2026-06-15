@@ -28,3 +28,4 @@ next-env.d.ts
 # dev server logs (Claude)
 dev-server.log
 dev-server.log.err
+.frames_maroon_backup/
