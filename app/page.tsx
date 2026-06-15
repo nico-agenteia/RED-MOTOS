@@ -21,10 +21,10 @@ export default function Home() {
         <Hero />
         <ShowcasePremium />
         <GiroBeneficios />
-        <Marcas />
-        <Catalogo />
         <SalaRoyalEnfield />
         <SalaSuzuki />
+        <Catalogo />
+        <Marcas />
         <RecomendadorIA />
         <SimuladorCuotas />
         <Clientes />
