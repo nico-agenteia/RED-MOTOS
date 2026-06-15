@@ -68,8 +68,11 @@ export async function GET(req: NextRequest) {
   // Éxito — descargar resultado y subir a Storage
   if (state === "success") {
     const resultJson = data?.resultJson as Record<string, unknown> | undefined;
-    const resultUrls = resultJson?.resultUrls as string[] | undefined;
-    const imageUrlKie = resultUrls?.[0];
+    // KIE puede devolver la URL en distintas rutas según el modelo
+    const resultUrls = (resultJson?.resultUrls ?? resultJson?.images ?? data?.resultUrls) as string[] | undefined;
+    const imageUrlKie = resultUrls?.[0]
+      ?? (resultJson?.url as string | undefined)
+      ?? (data?.outputImageUrl as string | undefined);
 
     if (!imageUrlKie) {
       return NextResponse.json({ error: "KIE no devolvió URL de resultado" }, { status: 500 });

@@ -93,17 +93,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 1. Subir la foto cruda a Storage uploads/
+  // 1. Subir la foto cruda al bucket público catalogo/ con prefijo raw/
+  //    (bucket público: KIE puede acceder directamente sin URL firmada)
   const sb = getSupabase();
   const archivoId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const extension = foto.name.split(".").pop() ?? "jpg";
-  const nombreArchivo = `${archivoId}.${extension}`;
+  const nombreArchivo = `raw/${archivoId}.${extension}`;
 
   const bytes = await foto.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   const { error: uploadError } = await sb.storage
-    .from("uploads")
+    .from("catalogo")
     .upload(nombreArchivo, buffer, {
       contentType: foto.type,
       upsert: false,
@@ -116,28 +117,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Obtener URL firmada (bucket privado) para pasarle a KIE
-  const { data: urlFirmada, error: urlError } = await sb.storage
-    .from("uploads")
-    .createSignedUrl(nombreArchivo, 3600); // válida 1h
+  // URL pública — accesible por KIE sin autenticación
+  const { data: urlData } = sb.storage.from("catalogo").getPublicUrl(nombreArchivo);
+  const inputImageUrl = urlData.publicUrl;
 
-  if (urlError || !urlFirmada?.signedUrl) {
-    return NextResponse.json(
-      { error: "No se pudo generar URL de la foto para KIE" },
-      { status: 500 },
-    );
-  }
-
-  // 2. Llamar a KIE createTask
-  const kieBody = {
-    model: "google/nano-banana-edit",
-    input: {
-      prompt: PROMPTS[estilo],
-      image_urls: [urlFirmada.signedUrl],
-      output_format: "png",
-    },
-  };
-
+  // 2. Llamar a KIE createTask con el formato correcto
   let taskId: string;
   try {
     const kieRes = await fetch(`${KIE_BASE}/jobs/createTask`, {
@@ -146,14 +130,20 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.KIE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(kieBody),
+      body: JSON.stringify({
+        model: "google/nano-banana-edit",
+        taskType: "image-to-image",
+        inputImageUrl,
+        prompt: PROMPTS[estilo],
+        negativePrompt: "blurry, low quality, watermark, text overlay, logo",
+      }),
     });
 
     const kieData = await kieRes.json().catch(() => null);
     if (!kieRes.ok || !kieData?.data?.taskId) {
-      console.error("[KIE createTask] Error:", kieData);
+      console.error("[KIE createTask] Error:", JSON.stringify(kieData));
       return NextResponse.json(
-        { error: kieData?.message ?? "Error al enviar tarea a KIE.AI" },
+        { error: kieData?.message ?? kieData?.error ?? "Error al enviar tarea a KIE.AI" },
         { status: 502 },
       );
     }
@@ -171,7 +161,7 @@ export async function POST(req: NextRequest) {
     tipo: estilo === "catalogo" ? "foto-catalogo" : "foto-redes",
     task_id: taskId,
     estado: "procesando",
-    input_url: urlFirmada.signedUrl,
+    input_url: inputImageUrl,
     meta: { estilo, archivo: nombreArchivo },
   });
 
