@@ -206,6 +206,25 @@ export default function Nav() {
               >
                 Cotizar → WhatsApp
               </motion.a>
+
+              <motion.a
+                href="/admin"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  delay: (LINKS_MOBILE.length + 1) * 0.08,
+                  duration: 0.35,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                onClick={() => setDrawerAbierto(false)}
+                className="mt-2 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-white/10 px-5 text-sm font-medium text-white/40 transition-colors duration-200 hover:border-white/20 hover:text-white/70"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Panel Admin
+              </motion.a>
             </motion.nav>
           </>
         )}
