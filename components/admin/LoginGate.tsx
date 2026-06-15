@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import AdminDashboard from "./AdminDashboard";
+
+type Estado = "verificando" | "login" | "autenticado";
 
 export default function LoginGate() {
+  const [estado, setEstado] = useState<Estado>("verificando");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
   const [shake, setShake] = useState(0);
+
+  // Al montar, verificar si ya hay sesión activa
+  useEffect(() => {
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((d) => setEstado(d.sesionActiva ? "autenticado" : "login"))
+      .catch(() => setEstado("login"));
+  }, []);
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
@@ -20,11 +32,11 @@ export default function LoginGate() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        window.location.reload();
+        setEstado("autenticado");
         return;
       }
       const datos = await res.json().catch(() => null);
-      setError(datos?.error ?? "No se pudo iniciar sesión");
+      setError(datos?.error ?? "Contraseña incorrecta");
       setShake((s) => s + 1);
     } catch {
       setError("Error de conexión. Intenta de nuevo.");
@@ -32,6 +44,18 @@ export default function LoginGate() {
     } finally {
       setCargando(false);
     }
+  }
+
+  if (estado === "verificando") {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-black">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-red-500" />
+      </main>
+    );
+  }
+
+  if (estado === "autenticado") {
+    return <AdminDashboard />;
   }
 
   return (
