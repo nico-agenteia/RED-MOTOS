@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+// Build marker: v2 KIE input-wrapper — fuerza redeploy en Vercel
 
 const PROMPTS: Record<string, string> = {
   catalogo:
