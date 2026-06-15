@@ -141,9 +141,10 @@ export async function POST(req: NextRequest) {
 
     const kieData = await kieRes.json().catch(() => null);
     if (!kieRes.ok || !kieData?.data?.taskId) {
-      console.error("[KIE createTask] Error:", JSON.stringify(kieData));
+      const kieMsg = kieData?.msg ?? kieData?.message ?? kieData?.error ?? JSON.stringify(kieData);
+      console.error("[KIE createTask] Error:", kieMsg);
       return NextResponse.json(
-        { error: kieData?.message ?? kieData?.error ?? "Error al enviar tarea a KIE.AI" },
+        { error: `KIE.AI: ${kieMsg}` },
         { status: 502 },
       );
     }
