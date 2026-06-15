@@ -170,7 +170,7 @@ export default function Nav() {
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
               aria-label="Menú móvil"
-              className="fixed right-0 top-0 z-50 flex h-dvh w-[280px] flex-col gap-2 border-l border-line bg-surface px-6 pt-24 lg:hidden"
+              className="fixed right-0 top-0 z-50 flex h-dvh w-[280px] flex-col gap-2 overflow-y-auto border-l border-line bg-surface px-6 pb-10 pt-24 lg:hidden"
             >
               {LINKS_MOBILE.map((link, i) => (
                 <motion.a
