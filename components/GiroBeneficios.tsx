@@ -263,7 +263,7 @@ export default function GiroBeneficios() {
 
           {/* Beneficio activo — abajo, alterna lado izq/der según el scroll */}
           <div
-            className={`absolute bottom-0 left-0 right-0 z-20 px-5 pb-28 ${
+            className={`absolute bottom-0 left-0 right-0 z-20 px-5 pb-40 ${
               izqMobile ? "text-left" : "text-right"
             }`}
           >
@@ -298,26 +298,22 @@ export default function GiroBeneficios() {
                 </p>
               </motion.div>
             </AnimatePresence>
+          </div>
 
-            {/* Indicador de pasos */}
-            <div
-              className={`mt-5 flex items-center gap-2 ${
-                izqMobile ? "justify-start" : "justify-end"
-              }`}
-            >
-              {BENEFICIOS.map((b, i) => (
-                <span
-                  key={b.num}
-                  aria-hidden="true"
-                  className="h-[2px] rounded-full transition-all duration-300"
-                  style={{
-                    width: i === activoMobileIdx ? "28px" : "14px",
-                    background:
-                      i === activoMobileIdx ? "var(--accent)" : "rgba(255,255,255,0.2)",
-                  }}
-                />
-              ))}
-            </div>
+          {/* Indicador de pasos — FIJO y centrado, no se mueve con el texto */}
+          <div className="absolute bottom-28 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2">
+            {BENEFICIOS.map((b, i) => (
+              <span
+                key={b.num}
+                aria-hidden="true"
+                className="h-[2px] rounded-full transition-all duration-300"
+                style={{
+                  width: i === activoMobileIdx ? "28px" : "14px",
+                  background:
+                    i === activoMobileIdx ? "var(--accent)" : "rgba(255,255,255,0.2)",
+                }}
+              />
+            ))}
           </div>
         </div>
       </section>
