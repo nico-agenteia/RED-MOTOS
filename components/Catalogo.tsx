@@ -148,10 +148,19 @@ export default function Catalogo() {
   );
 
   const motos = useMemo(() => {
-    if (filtro === "Todos") return CATALOGO;
-    if (filtro === "Con descuento")
-      return CATALOGO.filter((m) => m.precioBono !== null);
-    return CATALOGO.filter((m) => m.marca === filtro);
+    const base =
+      filtro === "Todos"
+        ? CATALOGO
+        : filtro === "Con descuento"
+          ? CATALOGO.filter((m) => m.precioBono !== null)
+          : CATALOGO.filter((m) => m.marca === filtro);
+
+    // Las motos con descuento (bono) van primero; el resto conserva su orden
+    // original (Array.sort es estable). Se copia para no mutar CATALOGO.
+    return [...base].sort(
+      (a, b) =>
+        (a.precioBono !== null ? 0 : 1) - (b.precioBono !== null ? 0 : 1),
+    );
   }, [filtro]);
 
   return (
