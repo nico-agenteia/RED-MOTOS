@@ -74,17 +74,6 @@ export default function GiroBeneficios() {
   const activoMobileIdx = Math.min(N - 1, Math.floor(mobileProgreso * N));
   const activoMobile = BENEFICIOS[activoMobileIdx];
 
-  /* ── Desktop: moto pan lateral sutil al cambiar de beneficio ───────── */
-  useEffect(() => {
-    if (!motoDesktopRef.current || reduce) return;
-    const xTarget = activoIdx % 2 === 0 ? "2%" : "-2%";
-    gsap.to(motoDesktopRef.current, {
-      x: xTarget,
-      duration: 1.2,
-      ease: "expo.out",
-    });
-  }, [activoIdx, reduce]);
-
   return (
     <>
       {/* ══════════════════════════════════════════════════════════════════
@@ -253,12 +242,12 @@ export default function GiroBeneficios() {
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-56"
-            style={{ background: "linear-gradient(to top, #1b1013 0%, #1b1013 20%, transparent 100%)" }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-72"
+            style={{ background: "linear-gradient(to top, #1b1013 0%, #1b1013 28%, transparent 100%)" }}
           />
 
-          {/* Beneficio activo — abajo, sobre el gradiente inferior */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-14">
+          {/* Beneficio activo — abajo, elevado para librar los botones flotantes */}
+          <div className="absolute bottom-0 left-0 right-0 z-20 px-5 pb-28">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activoMobile.num}
