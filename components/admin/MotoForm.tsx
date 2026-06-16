@@ -9,7 +9,7 @@ const MARCAS = [
   "Royal Enfield",
   "Suzuki",
   "Kymco",
-  "Zontes",
+  "Zonsen",
   "Cyclone",
 ] as const;
 
@@ -23,6 +23,10 @@ const SEGMENTOS = [
   "Custom",
   "Scooter",
   "Naked",
+  "Touring",
+  "Motocross",
+  "ATV",
+  "UTV",
 ] as const;
 
 const USOS_DISPONIBLES: Uso[] = ["Ciudad", "Ruta", "Off-road", "Trabajo", "Placer"];

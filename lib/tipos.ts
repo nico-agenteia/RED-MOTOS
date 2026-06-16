@@ -4,7 +4,7 @@ export type Marca =
   | "Royal Enfield"
   | "Suzuki"
   | "Kymco"
-  | "Zontes"
+  | "Zonsen"
   | "Cyclone";
 
 export type Segmento =
@@ -16,7 +16,11 @@ export type Segmento =
   | "Scrambler"
   | "Custom"
   | "Scooter"
-  | "Naked";
+  | "Naked"
+  | "Touring"
+  | "Motocross"
+  | "ATV"
+  | "UTV";
 
 export type Uso = "Ciudad" | "Ruta" | "Off-road" | "Trabajo" | "Placer";
 

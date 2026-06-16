@@ -24,7 +24,7 @@ const BENEFICIOS: Beneficio[] = [
         <span className="text-red-500">5</span> marcas oficiales
       </>
     ),
-    apoyo: "Royal Enfield, Suzuki, Kymco, Zontes y Cyclone en un solo lugar.",
+    apoyo: "Royal Enfield, Suzuki, Kymco, Zonsen y Cyclone en un solo lugar.",
     fondo: "bg-surface",
   },
   {
