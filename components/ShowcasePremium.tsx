@@ -46,7 +46,7 @@ const MODELOS: Modelo[] = [
     marca: "Royal Enfield",
     nombre: "Super Meteor 650",
     familia: "CRUISER LINE",
-    img: "/motos/re-super-meteor-celestial.webp",
+    img: "/motos/showcase-super-meteor.webp",
     bg: "hsl(0, 35%, 7%)",
     acento: "#E2231A",
     specs: [
@@ -78,7 +78,7 @@ const MODELOS: Modelo[] = [
     marca: "Zonsen",
     nombre: "RX3",
     familia: "ADVENTURE LINE",
-    img: "/motos/placeholder.webp",
+    img: "/motos/showcase-rx3.webp",
     bg: "hsl(270, 25%, 8%)",
     acento: "#9B7BD4",
     specs: [
