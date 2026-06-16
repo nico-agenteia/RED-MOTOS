@@ -46,7 +46,7 @@ const MODELOS: Modelo[] = [
     marca: "Royal Enfield",
     nombre: "Super Meteor 650",
     familia: "CRUISER LINE",
-    img: "/motos/CELESTIALRED.png",
+    img: "/motos/re-super-meteor-celestial.png",
     bg: "hsl(0, 35%, 7%)",
     acento: "#E2231A",
     specs: [
