@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pauta Reunión — Simulador de Cuotas Red Motos</title>
+<style>
+  :root { --rojo: #E2231A; --tinta: #111; --linea: #b9b9b9; --suave: #666; }
+
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  @page { size: A4; margin: 14mm 13mm; }
+
+  html { font-size: 12.5pt; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    color: var(--tinta);
+    line-height: 1.35;
+  }
+
+  /* ── Encabezado ── */
+  .cab {
+    border-bottom: 3px solid var(--rojo);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .cab .marca { font-size: 11pt; letter-spacing: .22em; text-transform: uppercase; color: var(--rojo); font-weight: 700; }
+  .cab h1 { font-size: 20pt; margin: 2px 0 6px; line-height: 1.05; }
+  .cab .meta { display: flex; gap: 24px; font-size: 10.5pt; color: var(--suave); }
+  .cab .meta b { color: var(--tinta); font-weight: 600; }
+
+  .intro {
+    font-size: 10.5pt; color: var(--suave);
+    background: #f6f6f6; border-left: 3px solid var(--rojo);
+    padding: 8px 12px; margin-bottom: 16px; border-radius: 0 6px 6px 0;
+  }
+
+  /* ── Secciones ── */
+  section { margin-bottom: 14px; page-break-inside: avoid; }
+  h2 {
+    font-size: 13pt; margin: 0 0 8px;
+    background: #111; color: #fff; padding: 5px 10px; border-radius: 5px;
+  }
+  h2 .imp { color: #ff8a82; font-size: 10pt; float: right; font-weight: 400; }
+
+  .q { margin: 0 0 9px; }
+  .q .txt { font-size: 11pt; font-weight: 600; margin-bottom: 4px; }
+  .q .hint { font-weight: 400; color: var(--suave); font-size: 9.5pt; }
+
+  /* Líneas para escribir */
+  .linea { border-bottom: 1px solid var(--linea); height: 0.95cm; }
+  .linea.corta { display: inline-block; width: 3.2cm; height: 0.62cm; vertical-align: bottom; }
+  .linea.media { display: inline-block; width: 6cm; height: 0.62cm; vertical-align: bottom; }
+  .doslineas .linea { margin-top: 0.55cm; }
+  .doslineas .linea:first-child { margin-top: 0; }
+
+  .inline { font-size: 11pt; }
+  .inline .et { color: var(--suave); }
+
+  /* Grilla de tasas por plazo */
+  .tasas { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .tasas .celda { flex: 1 1 70px; text-align: center; }
+  .tasas .celda .pl { font-size: 9.5pt; color: var(--suave); }
+  .tasas .celda .bx { border: 1px solid var(--linea); border-radius: 5px; height: 1.05cm; margin-top: 3px; }
+
+  /* Casillas */
+  .check { display: flex; align-items: flex-start; gap: 8px; margin: 5px 0; font-size: 11pt; }
+  .box { width: 16px; height: 16px; border: 1.6px solid var(--tinta); border-radius: 3px; flex: 0 0 auto; margin-top: 1px; }
+  .opciones { display: flex; gap: 18px; flex-wrap: wrap; }
+  .opciones .check { margin: 2px 0; }
+
+  /* Caja destacada (mínimo viable) */
+  .destacado { border: 2px solid var(--rojo); border-radius: 8px; padding: 10px 14px; }
+  .destacado h3 { margin: 0 0 6px; color: var(--rojo); font-size: 12pt; }
+
+  .nota { font-size: 9.5pt; color: var(--suave); margin-top: 4px; }
+  .pie { margin-top: 14px; border-top: 1px solid var(--linea); padding-top: 6px; font-size: 9pt; color: #999; text-align: center; }
+
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+  <div class="cab">
+    <div class="marca">Red Motos · nico.agenteia</div>
+    <h1>Pauta de reunión — Simulador de cuotas</h1>
+    <div class="meta">
+      <span><b>Fecha:</b> <span class="linea corta"></span></span>
+      <span><b>Asistentes:</b> <span class="linea media"></span></span>
+    </div>
+  </div>
+
+  <div class="intro">
+    Objetivo: capturar tasas, comisiones, seguros y reglas reales para que el
+    simulador entregue cuotas creíbles. Por cada costo, anota siempre <b>cuánto</b>
+    y <b>cómo se cobra</b> (monto fijo o %, una vez o mensual).
+  </div>
+
+  <!-- A -->
+  <section>
+    <h2>A. ¿Quién financia? <span class="imp">imprescindible</span></h2>
+    <div class="q">
+      <div class="txt">¿Financiamiento propio de la casa o vía financiera/banco? ¿Cuál(es)?</div>
+      <div class="linea"></div>
+    </div>
+    <div class="q">
+      <div class="txt">¿El cliente puede elegir entre varias opciones? ¿Quién aprueba y en cuánto tiempo?</div>
+      <div class="linea"></div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section>
+    <h2>B. Tasa de interés <span class="imp">imprescindible</span></h2>
+    <div class="q">
+      <div class="txt">Tasa mensual base: <span class="linea corta"></span> &nbsp; ¿Es fija? ¿En pesos (no UF)?
+        <span class="linea media"></span></div>
+    </div>
+    <div class="q">
+      <div class="txt">¿La tasa cambia según el plazo? Anota la tasa de cada plazo:</div>
+      <div class="tasas">
+        <div class="celda"><div class="pl">12</div><div class="bx"></div></div>
+        <div class="celda"><div class="pl">18</div><div class="bx"></div></div>
+        <div class="celda"><div class="pl">24</div><div class="bx"></div></div>
+        <div class="celda"><div class="pl">36</div><div class="bx"></div></div>
+        <div class="celda"><div class="pl">48</div><div class="bx"></div></div>
+        <div class="celda"><div class="pl">60</div><div class="bx"></div></div>
+      </div>
+    </div>
+    <div class="q">
+      <div class="txt">¿Cambia según monto o perfil del cliente? &nbsp; Tasa máxima/segura para mostrar:
+        <span class="linea corta"></span></div>
+      <div class="linea"></div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section>
+    <h2>C. Pie y plazos <span class="imp">imprescindible</span></h2>
+    <div class="q inline">
+      <span class="et">Pie mínimo:</span> <span class="linea corta"></span> &nbsp;&nbsp;
+      <span class="et">Pie máximo:</span> <span class="linea corta"></span>
+    </div>
+    <div class="q">
+      <div class="txt">Plazos disponibles (marca):</div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> 12</div>
+        <div class="check"><span class="box"></span> 18</div>
+        <div class="check"><span class="box"></span> 24</div>
+        <div class="check"><span class="box"></span> 36</div>
+        <div class="check"><span class="box"></span> 48</div>
+        <div class="check"><span class="box"></span> 60</div>
+        <div class="check"><span class="box"></span> otro: <span class="linea corta"></span></div>
+      </div>
+    </div>
+    <div class="q inline">
+      <span class="et">Monto mín. a financiar:</span> <span class="linea corta"></span> &nbsp;&nbsp;
+      <span class="et">Monto máx.:</span> <span class="linea corta"></span>
+    </div>
+    <div class="q inline">
+      <span class="et">¿Cuota mínima?</span> <span class="linea corta"></span> &nbsp;&nbsp;
+      <span class="et">¿Plazo máx. depende del monto/moto?</span> <span class="linea media"></span>
+    </div>
+  </section>
+
+  <!-- D -->
+  <section>
+    <h2>D. Comisiones y gastos <span class="imp">imprescindible</span></h2>
+    <div class="q">
+      <div class="txt">Comisión de apertura / gastos de otorgamiento
+        <span class="hint">(monto o %, ¿una vez o mensual?)</span></div>
+      <div class="linea"></div>
+    </div>
+    <div class="q inline">
+      <span class="et">Inscripción de prenda (Registro Civil):</span> <span class="linea media"></span>
+    </div>
+    <div class="q inline">
+      <span class="et">Gastos notariales:</span> <span class="linea media"></span>
+    </div>
+    <div class="q">
+      <div class="txt">Impuesto de Timbres y Estampillas: ¿lo cobran al cliente?</div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> Sí</div>
+        <div class="check"><span class="box"></span> No</div>
+        <div class="check"><span class="box"></span> Va incluido</div>
+      </div>
+    </div>
+    <div class="q">
+      <div class="txt">¿Otros cargos? (gestión, envío, etc.)</div>
+      <div class="linea"></div>
+    </div>
+    <div class="q">
+      <div class="txt">¿Estos gastos se suman a la cuota, se pagan aparte al inicio, o se financian?</div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> Suman a la cuota</div>
+        <div class="check"><span class="box"></span> Aparte al inicio</div>
+        <div class="check"><span class="box"></span> Se financian</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- E -->
+  <section class="page-break">
+    <h2>E. Seguros <span class="imp">imprescindible</span></h2>
+    <div class="q">
+      <div class="txt">Seguro de desgravamen — ¿obligatorio? &nbsp; Costo
+        <span class="hint">(% del saldo mensual / $ al mes / $ una vez)</span></div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> Obligatorio</div>
+        <div class="check"><span class="box"></span> Opcional</div>
+      </div>
+      <div class="linea"></div>
+    </div>
+    <div class="q">
+      <div class="txt">Seguro de la moto (robo/daños) — ¿lo exigen durante el crédito? &nbsp; Costo aprox.</div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> Exigido</div>
+        <div class="check"><span class="box"></span> Opcional</div>
+      </div>
+      <div class="linea"></div>
+    </div>
+    <div class="q">
+      <div class="txt">¿Los seguros van incluidos en la cuota o aparte? ¿Hay seguros opcionales a mostrar?</div>
+      <div class="linea"></div>
+    </div>
+  </section>
+
+  <!-- F -->
+  <section>
+    <h2>F. Reglas y casos especiales</h2>
+    <div class="q">
+      <div class="txt">¿Primera cuota diferida o mes de gracia? &nbsp; ¿Promos vigentes? (0% interés, pie 0…)</div>
+      <div class="doslineas">
+        <div class="linea"></div>
+        <div class="linea"></div>
+      </div>
+    </div>
+    <div class="q">
+      <div class="txt">¿La tasa/condiciones cambian por marca o modelo? ¿Requisitos del cliente (renta, antigüedad, edad)?</div>
+      <div class="doslineas">
+        <div class="linea"></div>
+        <div class="linea"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- G -->
+  <section>
+    <h2>G. Legal y presentación</h2>
+    <div class="q">
+      <div class="txt">¿Mostramos cuota + CAE, o solo "referencial sujeto a aprobación"?</div>
+      <div class="opciones">
+        <div class="check"><span class="box"></span> Cuota + CAE</div>
+        <div class="check"><span class="box"></span> Solo referencial</div>
+      </div>
+    </div>
+    <div class="q">
+      <div class="txt">Disclaimer exacto que quieren mostrar:</div>
+      <div class="linea"></div>
+    </div>
+    <div class="q">
+      <div class="txt">¿Cada cuánto actualizan las tasas? (define si va editable desde el panel admin)</div>
+      <div class="linea"></div>
+    </div>
+  </section>
+
+  <!-- Mínimo viable -->
+  <section class="destacado">
+    <h3>★ Si la reunión es corta, asegura esto:</h3>
+    <div class="check"><span class="box"></span> Tasa mensual (y si varía por plazo)</div>
+    <div class="check"><span class="box"></span> Pie mínimo y plazos disponibles</div>
+    <div class="check"><span class="box"></span> Comisión de apertura + seguro de desgravamen (obligatorio y costo)</div>
+    <div class="check"><span class="box"></span> ¿Todo eso se suma a la cuota o va aparte?</div>
+  </section>
+
+  <!-- Checklist -->
+  <section>
+    <h2>Checklist final</h2>
+    <div class="opciones" style="flex-direction:column; gap:0;">
+      <div class="check"><span class="box"></span> Tasa(s) mensual(es) por plazo</div>
+      <div class="check"><span class="box"></span> Pie mín./máx. y plazos</div>
+      <div class="check"><span class="box"></span> Monto mín./máx. financiable</div>
+      <div class="check"><span class="box"></span> Comisión de apertura (monto/forma)</div>
+      <div class="check"><span class="box"></span> Prenda / notariales / timbres</div>
+      <div class="check"><span class="box"></span> Seguro de desgravamen (oblig., costo)</div>
+      <div class="check"><span class="box"></span> Seguro de la moto (exigido, costo)</div>
+      <div class="check"><span class="box"></span> ¿Suma a la cuota o aparte?</div>
+      <div class="check"><span class="box"></span> ¿Mostramos CAE? + disclaimer</div>
+      <div class="check"><span class="box"></span> Quién financia y tiempo de aprobación</div>
+    </div>
+  </section>
+
+  <div class="pie">Red Motos · nico.agenteia — pauta para anotar en tablet</div>
+
+</body>
+</html>
