@@ -9,9 +9,7 @@ const MARCAS = [
   "Royal Enfield",
   "Suzuki",
   "Kymco",
-  "Keeway",
   "Zontes",
-  "Voge",
   "Cyclone",
 ] as const;
 

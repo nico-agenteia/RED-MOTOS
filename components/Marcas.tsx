@@ -4,7 +4,7 @@ import { MARCAS_OFICIALES } from "@/lib/catalogo";
 import { useReveal } from "@/lib/useReveal";
 
 /**
- * Marquee de las 8 marcas oficiales. CSS puro (translateX infinite, 30s),
+ * Marquee de las marcas oficiales. CSS puro (translateX infinite, 30s),
  * pausa en hover. Logos en blanco al 50% → 100% en hover. Royal Enfield y
  * Suzuki (insignias) van ligeramente más grandes.
  */

@@ -21,10 +21,10 @@ const BENEFICIOS: Beneficio[] = [
   {
     frase: (
       <>
-        <span className="text-red-500">8</span> marcas oficiales
+        <span className="text-red-500">5</span> marcas oficiales
       </>
     ),
-    apoyo: "Royal Enfield, Suzuki, Kymco, Benelli, Keeway, Haojue, Euromot y Zongshen en un solo lugar.",
+    apoyo: "Royal Enfield, Suzuki, Kymco, Zontes y Cyclone en un solo lugar.",
     fondo: "bg-surface",
   },
   {

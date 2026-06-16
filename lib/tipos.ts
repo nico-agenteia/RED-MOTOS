@@ -4,9 +4,7 @@ export type Marca =
   | "Royal Enfield"
   | "Suzuki"
   | "Kymco"
-  | "Keeway"
   | "Zontes"
-  | "Voge"
   | "Cyclone";
 
 export type Segmento =

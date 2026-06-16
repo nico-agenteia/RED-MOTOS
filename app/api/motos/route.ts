@@ -14,9 +14,7 @@ const esquemaMoto = z.object({
     "Royal Enfield",
     "Suzuki",
     "Kymco",
-    "Keeway",
     "Zontes",
-    "Voge",
     "Cyclone",
   ]),
   segmento: z.enum([

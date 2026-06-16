@@ -192,23 +192,6 @@ export const CATALOGO: Moto[] = [
     orden: 11,
   },
 
-  // ── KEEWAY ───────────────────────────────────────────────────────────
-  {
-    id: "kw-superlight-200",
-    marca: "Keeway",
-    modelo: "Superlight 200",
-    segmento: "Custom",
-    cc: 200,
-    precioLista: 2_299_000,
-    precioBono: 1_999_900,
-    bonoVence: null,
-    img: "/motos/superlight200.png",
-    usos: ["Ciudad", "Placer"],
-    aptaPrincipiante: true,
-    destacado: false,
-    orden: 12,
-  },
-
   // ── ZONTES ───────────────────────────────────────────────────────────
   {
     id: "zt-zt350-t2",
@@ -224,38 +207,6 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 13,
-  },
-
-  // ── VOGE ─────────────────────────────────────────────────────────────
-  {
-    id: "vg-525-dsx-m",
-    marca: "Voge",
-    modelo: "525 DSX M",
-    segmento: "Adventure",
-    cc: 525,
-    precioLista: 6_799_000,
-    precioBono: null,
-    bonoVence: null,
-    img: "/motos/525DSXM.png",
-    usos: ["Ruta", "Off-road", "Placer"],
-    aptaPrincipiante: false,
-    destacado: false,
-    orden: 14,
-  },
-  {
-    id: "vg-300-rally",
-    marca: "Voge",
-    modelo: "300 Rally",
-    segmento: "Off-road",
-    cc: 300,
-    precioLista: 3_299_000,
-    precioBono: null,
-    bonoVence: null,
-    img: "/motos/rally.png",
-    usos: ["Off-road", "Ciudad"],
-    aptaPrincipiante: true,
-    destacado: false,
-    orden: 15,
   },
 
   // ── CYCLONE ──────────────────────────────────────────────────────────
@@ -281,22 +232,15 @@ export const MARCAS_CATALOGO: Marca[] = [
   "Royal Enfield",
   "Suzuki",
   "Kymco",
-  "Voge",
   "Zontes",
-  "Keeway",
   "Cyclone",
 ];
 
-/** Las 8 marcas distribuidas oficialmente (para el marquee de logos). */
+/** Marcas distribuidas oficialmente (para el marquee de logos). */
 export const MARCAS_OFICIALES = [
   { nombre: "Royal Enfield", logo: "/logos/logo-royal-enfield.png", insignia: true },
   { nombre: "Suzuki", logo: "/logos/logo-suzuki.png", insignia: true },
-  { nombre: "Benelli", logo: "/logos/logo-benelli.png", insignia: false },
   { nombre: "Kymco", logo: "/logos/logo-kymco.png", insignia: false },
-  { nombre: "Keeway", logo: "/logos/logo-keeway.png", insignia: false },
-  { nombre: "Haojue", logo: "/logos/logo-haojue.png", insignia: false },
-  { nombre: "Euromot", logo: "/logos/logo-euromot.png", insignia: false },
-  { nombre: "Zongshen", logo: "/logos/logo-zongshen.png", insignia: false },
 ] as const;
 
 export const MOTOS_ROYAL_ENFIELD = CATALOGO.filter(

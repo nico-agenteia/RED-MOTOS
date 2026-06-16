@@ -15,9 +15,7 @@ const TINTE_MARCA: Record<string, string> = {
   "Royal Enfield": "hsl(36, 30%, 8%)",
   Suzuki: "hsl(221, 60%, 7%)",
   Kymco: "hsl(152, 25%, 7%)",
-  Keeway: "hsl(0, 0%, 9%)",
   Zontes: "hsl(270, 20%, 8%)",
-  Voge: "hsl(200, 25%, 8%)",
   Cyclone: "hsl(10, 35%, 8%)",
 };
 
