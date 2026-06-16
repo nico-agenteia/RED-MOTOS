@@ -63,7 +63,7 @@ function CardMoto({ moto }: { moto: Moto }) {
           width={520}
           height={390}
           loading="lazy"
-          className="relative h-full w-full object-contain p-6 transition-transform duration-300 ease-out-expo group-hover:scale-[1.04]"
+          className="relative h-full w-full object-cover transition-transform duration-300 ease-out-expo group-hover:scale-[1.04]"
         />
         {moto.precioBono !== null && (
           <span className="absolute left-4 top-4 rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
