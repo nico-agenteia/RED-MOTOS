@@ -35,7 +35,7 @@ function CardSuzuki({ moto, indice }: { moto: Moto; indice: number }) {
         />
         {moto.precioBono !== null && (
           <span className="absolute left-4 top-4 rounded-sm bg-sz-red px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
-            Bono
+            Descuento
           </span>
         )}
       </div>

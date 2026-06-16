@@ -40,7 +40,7 @@ const esquema = z.object({
     .int()
     .positive("El precio debe ser mayor a 0"),
   precioBono: z.coerce
-    .number({ message: "Precio bono inválido" })
+    .number({ message: "Precio descuento inválido" })
     .int()
     .nonnegative("Debe ser positivo")
     .optional()
@@ -278,7 +278,7 @@ export default function MotoForm({
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="label-mono !text-[11px]">Precio bono (CLP, opcional)</span>
+                  <span className="label-mono !text-[11px]">Precio descuento (CLP, opcional)</span>
                   <input type="number" value={precioBono} onChange={(e) => setPrecioBono(e.target.value)} placeholder="3199900" className={claseInput} />
                   {errores.precioBono && <span className="text-xs text-red-500">{errores.precioBono}</span>}
                 </label>
@@ -287,7 +287,7 @@ export default function MotoForm({
               {/* Vigencia bono */}
               {precioBono !== "" && (
                 <label className="flex flex-col gap-1">
-                  <span className="label-mono !text-[11px]">Vence el bono (opcional)</span>
+                  <span className="label-mono !text-[11px]">Vence el descuento (opcional)</span>
                   <input type="date" value={bonoVence} onChange={(e) => setBonoVence(e.target.value)} className={claseInput} />
                 </label>
               )}

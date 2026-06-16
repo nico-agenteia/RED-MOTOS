@@ -36,7 +36,7 @@ function CardHermana({ moto }: { moto: Moto }) {
         />
         {moto.precioBono !== null && (
           <span className="absolute left-3 top-3 rounded-sm bg-red-500 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white">
-            Bono
+            Descuento
           </span>
         )}
       </div>
