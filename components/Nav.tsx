@@ -66,11 +66,15 @@ export default function Nav() {
         <a
           href="#"
           aria-label={`${NEGOCIO.nombreLargo} — inicio`}
-          className={`font-display font-extrabold uppercase tracking-wide text-white transition-all duration-300 ${
-            conScroll ? "text-xl" : "text-2xl"
-          }`}
+          className="flex items-center"
         >
-          Red Motos<span className="text-red-500">.</span>
+          <img
+            src="/logos/red-motos-logo.png"
+            alt={NEGOCIO.nombreLargo}
+            className={`w-auto transition-all duration-300 ${
+              conScroll ? "h-10" : "h-14"
+            }`}
+          />
         </a>
 
         {/* Links desktop */}

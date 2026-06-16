@@ -68,10 +68,12 @@ export default function LoginGate() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-sm rounded-xl border border-line bg-surface p-8"
       >
-        <p className="font-display text-2xl font-extrabold uppercase tracking-wide text-white">
-          Red Motos<span className="text-red-500">.</span>
-        </p>
-        <p className="label-mono mt-1 !text-[11px]">Panel de administración</p>
+        <img
+          src="/logos/red-motos-logo.png"
+          alt="Red Motos Chile"
+          className="mx-auto h-24 w-auto"
+        />
+        <p className="label-mono mt-3 text-center !text-[11px]">Panel de administración</p>
 
         <label className="mt-8 flex flex-col gap-2">
           <span className="text-sm font-medium text-white">Contraseña</span>

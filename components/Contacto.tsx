@@ -143,9 +143,13 @@ export default function Contacto() {
           <a
             href="#"
             aria-label={`${NEGOCIO.nombreLargo} — volver arriba`}
-            className="font-display text-xl font-extrabold uppercase tracking-wide text-white"
+            className="flex items-center"
           >
-            Red Motos<span className="text-red-500">.</span>
+            <img
+              src="/logos/red-motos-logo.png"
+              alt={NEGOCIO.nombreLargo}
+              className="h-16 w-auto"
+            />
           </a>
 
           <nav aria-label="Enlaces rápidos" className="flex flex-wrap gap-6">

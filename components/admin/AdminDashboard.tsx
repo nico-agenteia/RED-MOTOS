@@ -81,10 +81,12 @@ export default function AdminDashboard() {
     <div className="flex min-h-dvh bg-black">
       {/* Sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface-2 p-6 md:flex">
-        <p className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
-          Red Motos<span className="text-red-500">.</span>
-        </p>
-        <p className="label-mono mt-1 !text-[10px]">Panel admin</p>
+        <img
+          src="/logos/red-motos-logo.png"
+          alt="Red Motos Chile"
+          className="h-16 w-auto"
+        />
+        <p className="label-mono mt-2 !text-[10px]">Panel admin</p>
         <nav className="mt-10 flex flex-col gap-1" aria-label="Secciones del panel">
           {SECCIONES.map((s) => (
             <button
