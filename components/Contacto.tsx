@@ -146,7 +146,7 @@ export default function Contacto() {
             className="flex items-center"
           >
             <img
-              src="/logos/red-motos-logo.png"
+              src="/logos/red-motos-logo.webp"
               alt={NEGOCIO.nombreLargo}
               className="h-16 w-auto"
             />

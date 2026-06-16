@@ -5,7 +5,7 @@ import { frames360 } from "@/lib/frames360";
 
 export type Viewer360Props = {
   slug: string;          // id del catálogo → busca frames en el manifest
-  fallbackImg: string;   // foto estática si no hay frames (ej. "/motos/GSX-R1000R.png")
+  fallbackImg: string;   // foto estática si no hay frames (ej. "/motos/GSX-R1000R.webp")
   alt: string;
   progreso: number;      // 0..1, controla el ángulo. Lo provee el padre (scroll-scrub o drag).
   className?: string;    // clases para el contenedor raíz

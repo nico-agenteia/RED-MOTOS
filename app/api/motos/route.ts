@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         precio_lista: d.precioLista,
         precio_bono: d.precioBono ?? null,
         bono_vence: d.bonoVence ?? null,
-        img: d.imagenUrl || "/logos/logo-royal-enfield.png",
+        img: d.imagenUrl || "/logos/logo-royal-enfield.webp",
         usos: d.usos ?? ["Ciudad"],
         apta_principiante: d.aptaPrincipiante ?? ccDetectado <= 400,
         destacado: d.destacado ?? false,

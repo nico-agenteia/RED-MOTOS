@@ -30,7 +30,7 @@ const MODELOS: Modelo[] = [
     marca: "Suzuki",
     nombre: "GSX-R1000R",
     familia: "RACING LINE",
-    img: "/motos/GSX-R1000R.png",
+    img: "/motos/GSX-R1000R.webp",
     bg: "hsl(221, 60%, 6%)",
     acento: "#3B6FD4",
     specs: [
@@ -46,7 +46,7 @@ const MODELOS: Modelo[] = [
     marca: "Royal Enfield",
     nombre: "Super Meteor 650",
     familia: "CRUISER LINE",
-    img: "/motos/re-super-meteor-celestial.png",
+    img: "/motos/re-super-meteor-celestial.webp",
     bg: "hsl(0, 35%, 7%)",
     acento: "#E2231A",
     specs: [
@@ -62,7 +62,7 @@ const MODELOS: Modelo[] = [
     marca: "Cyclone",
     nombre: "RA2",
     familia: "NAKED LINE",
-    img: "/motos/RA2.png",
+    img: "/motos/RA2.webp",
     bg: "hsl(10, 40%, 7%)",
     acento: "#E0552B",
     specs: [
@@ -78,7 +78,7 @@ const MODELOS: Modelo[] = [
     marca: "Zonsen",
     nombre: "RX3",
     familia: "ADVENTURE LINE",
-    img: "/motos/placeholder.png",
+    img: "/motos/placeholder.webp",
     bg: "hsl(270, 25%, 8%)",
     acento: "#9B7BD4",
     specs: [
@@ -94,7 +94,7 @@ const MODELOS: Modelo[] = [
     marca: "Kymco",
     nombre: "X-Town 300",
     familia: "URBAN LINE",
-    img: "/motos/xtown300.png",
+    img: "/motos/xtown300.webp",
     bg: "hsl(152, 30%, 7%)",
     acento: "#3FB97E",
     specs: [

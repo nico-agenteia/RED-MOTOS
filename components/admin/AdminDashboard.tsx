@@ -82,7 +82,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface-2 p-6 md:flex">
         <img
-          src="/logos/red-motos-logo.png"
+          src="/logos/red-motos-logo.webp"
           alt="Red Motos Chile"
           className="h-16 w-auto"
         />

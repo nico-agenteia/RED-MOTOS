@@ -69,7 +69,7 @@ export default function Nav() {
           className="flex items-center"
         >
           <img
-            src="/logos/red-motos-logo.png"
+            src="/logos/red-motos-logo.webp"
             alt={NEGOCIO.nombreLargo}
             className={`w-auto transition-all duration-300 ${
               conScroll ? "h-10" : "h-14"

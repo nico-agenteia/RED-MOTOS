@@ -26,7 +26,7 @@ import { frames360 } from "@/lib/frames360";
 import { gsap, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 
 const SLUG = "sz-gsx-r-1000r";
-const FALLBACK_IMG = "/motos/GSX-R1000R.png";
+const FALLBACK_IMG = "/motos/GSX-R1000R.webp";
 const HERO_BG = "/hero-bg.jpg";
 const { count: TOTAL_FRAMES, framePath } = frames360(SLUG);
 

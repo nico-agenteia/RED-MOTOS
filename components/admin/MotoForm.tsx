@@ -295,7 +295,7 @@ export default function MotoForm({
               {/* URL imagen */}
               <label className="flex flex-col gap-1">
                 <span className="label-mono !text-[11px]">URL de imagen</span>
-                <input type="text" value={imagenUrl} onChange={(e) => setImagenUrl(e.target.value)} placeholder="/motos/Hunter350.png o https://…" className={claseInput} />
+                <input type="text" value={imagenUrl} onChange={(e) => setImagenUrl(e.target.value)} placeholder="/motos/Hunter350.webp o https://…" className={claseInput} />
                 {errores.imagenUrl && <span className="text-xs text-red-500">{errores.imagenUrl}</span>}
               </label>
 

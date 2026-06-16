@@ -69,7 +69,7 @@ export default function LoginGate() {
         className="w-full max-w-sm rounded-xl border border-line bg-surface p-8"
       >
         <img
-          src="/logos/red-motos-logo.png"
+          src="/logos/red-motos-logo.webp"
           alt="Red Motos Chile"
           className="mx-auto h-24 w-auto"
         />

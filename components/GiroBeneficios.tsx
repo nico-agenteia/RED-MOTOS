@@ -136,7 +136,7 @@ export default function GiroBeneficios() {
           >
             <Viewer360
               slug="re-super-meteor-650-celestial"
-              fallbackImg="/motos/CELESTIALRED.png"
+              fallbackImg="/motos/CELESTIALRED.webp"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={progreso}
               className="w-[72%] max-w-[820px] translate-y-[-2%]"
@@ -247,7 +247,7 @@ export default function GiroBeneficios() {
           >
             <Viewer360
               slug="re-super-meteor-650-celestial"
-              fallbackImg="/motos/CELESTIALRED.png"
+              fallbackImg="/motos/CELESTIALRED.webp"
               alt="Royal Enfield Super Meteor 650 Celestial"
               progreso={reduce ? 0.35 : mobileProgreso}
               className="w-[104%] max-w-none"

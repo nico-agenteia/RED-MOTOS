@@ -25,7 +25,7 @@ async function main() {
     const nombre = p.replace("/motos/", "");
     const buffer = readFileSync(join(process.cwd(), "public", "motos", nombre));
     const ext = nombre.split(".").pop()?.toLowerCase();
-    const contentType = ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/png";
+    const contentType = ext === "webp" ? "image/webp" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/png";
     const { error } = await sb.storage.from("catalogo").upload(nombre, buffer, { contentType, upsert: true });
     if (error) { console.error(`✗ upload ${nombre}:`, error.message); process.exit(1); }
     const { data } = sb.storage.from("catalogo").getPublicUrl(nombre);
