@@ -72,6 +72,15 @@ export async function obtenerConfigSpider(
  */
 const MOTO_HOMOLOGACION = { marca: "Royal Enfield", modelo: "Meteor 350" } as const;
 
+/**
+ * Códigos del vehículo para prellenar el iFrame de Araña (Opción A, Fase 2).
+ * El manual NO trae catálogo de códigos marca/modelo: entrega estos ejemplos de
+ * QA (motos) para cablear y probar el flujo. ⚠️ PROD: reemplazar por los códigos
+ * reales que Autofin asigne al catálogo de Red Motos. Son números globales del
+ * maestro Autofin, no secretos (viajan en el src del iFrame).
+ */
+const IFRAME_MOTO_QA = { brand: 52, model: 178, year: 2024 } as const;
+
 /** Seguros tal como los espera el body de CUOTA-TRINIDAD (8 llaves canónicas). */
 export interface SegurosMoto {
   Desgravamen: boolean;
@@ -84,6 +93,15 @@ export interface SegurosMoto {
   GarantiaMecanica: boolean;
 }
 
+/** Datos para lanzar el iFrame de solicitud de Araña (Opción A). No son secretos. */
+export interface IframeSolicitud {
+  spiderUrl: string;
+  codSpider: string;
+  brand: number;
+  model: number;
+  year: number;
+}
+
 /** Rangos y plazos que el simulador muestra al usuario (derivados de la config). */
 export interface OpcionesMoto {
   plazos: number[];
@@ -91,10 +109,12 @@ export interface OpcionesMoto {
   pieMaxPct: number;
   precioMin: number;
   precioMax: number;
+  /** Parámetros para prellenar el iFrame al apretar "Solicitar financiamiento". */
+  iframe: IframeSolicitud;
 }
 
 /** Códigos server-side para armar el body de cuota (nunca van al browser). */
-interface CodigosMoto extends OpcionesMoto {
+interface CodigosMoto extends Omit<OpcionesMoto, "iframe"> {
   producto: number;
   tipoCredito: number;
   dealer: number;
@@ -170,13 +190,26 @@ function extraerMotoDeConfig(config: ConfigSpiderRespuesta): CodigosMoto {
   };
 }
 
-/** Opciones públicas del simulador de motos (plazos + rangos pie/precio). */
+/** Opciones públicas del simulador de motos (plazos + rangos + datos del iFrame). */
 export async function obtenerOpcionesMoto(
   codSpider?: string,
 ): Promise<OpcionesMoto> {
+  const cod = codSpider || requireEnv("AUTOFIN_COD_SPIDER");
   const { plazos, pieMinPct, pieMaxPct, precioMin, precioMax } =
-    extraerMotoDeConfig(await obtenerConfigSpider(codSpider));
-  return { plazos, pieMinPct, pieMaxPct, precioMin, precioMax };
+    extraerMotoDeConfig(await obtenerConfigSpider(cod));
+  return {
+    plazos,
+    pieMinPct,
+    pieMaxPct,
+    precioMin,
+    precioMax,
+    iframe: {
+      spiderUrl:
+        process.env.AUTOFIN_SPIDER_URL ?? "https://spiderqa.autofin.cl",
+      codSpider: cod,
+      ...IFRAME_MOTO_QA,
+    },
+  };
 }
 
 export interface EntradaCuota {

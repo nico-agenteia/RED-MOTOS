@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { cuotaFrancesa, formatCLP } from "@/lib/utils";
 import { linkWhatsApp, TASA_MENSUAL_REFERENCIAL } from "@/lib/config";
 import type { OpcionesMoto, ResultadoCuota } from "@/lib/autofin";
+import ModalSolicitud from "@/components/ModalSolicitud";
 
 // Valores de respaldo: se usan mientras carga la config o si Autofin no responde
 // (modo referencial con cálculo local de cuota francesa).
@@ -29,6 +30,8 @@ export default function SimuladorCuotas() {
   const [plazo, setPlazo] = useState(24);
   const [cuotaReal, setCuotaReal] = useState<ResultadoCuota | null>(null);
   const [estado, setEstado] = useState<EstadoCuota>("idle");
+  const [solicitudSrc, setSolicitudSrc] = useState<string | null>(null);
+  const [cargandoSolicitud, setCargandoSolicitud] = useState(false);
 
   const cuotaRef = useRef<HTMLSpanElement>(null);
   const cuotaAnimada = useRef({ val: 0 });
@@ -146,6 +149,64 @@ export default function SimuladorCuotas() {
   const fillPie = pieMax > pieMin ? ((piePct - pieMin) / (pieMax - pieMin)) * 100 : 0;
 
   const mensajeWsp = `Hola! Simulé un financiamiento en la web de Red Motos: moto de ${formatCLP(valor)}, pie de ${formatCLP(pie)} (${piePct}%), ${plazo} cuotas de ${formatCLP(cuotaNum)}${real ? ` (CAE ${formatPct(cuotaReal!.cae)}%)` : ""}. ¿Me pueden ayudar a concretarlo?`;
+
+  const payloadLead = (via: "iframe" | "whatsapp") => ({
+    origen: "simulador" as const,
+    presupuesto: formatCLP(valor),
+    score: "warm" as const,
+    payload: {
+      valor,
+      pie,
+      piePct,
+      plazo,
+      cuota: cuotaNum,
+      cuotaReal: real,
+      cae: real ? cuotaReal!.cae : null,
+      totalCredito: real ? cuotaReal!.totalCredito : null,
+      via,
+    },
+  });
+
+  // Captura de lead al usar el CTA de WhatsApp (fire-and-forget).
+  const registrarLeadWsp = () => {
+    void fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payloadLead("whatsapp")),
+    }).catch(() => {});
+  };
+
+  // "Solicitar financiamiento": registra el lead, obtiene su id y abre el iFrame
+  // de Araña prellenado con el precio + idExterno = leadId (cruce con el webhook).
+  const abrirSolicitud = async () => {
+    if (!opciones || cargandoSolicitud) return;
+    setCargandoSolicitud(true);
+    let leadId = "";
+    try {
+      const r = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadLead("iframe")),
+      });
+      if (r.ok) leadId = (await r.json())?.leadId ?? "";
+    } catch {
+      // sin leadId igual abrimos el iFrame; solo perdemos el cruce automático
+    }
+
+    const { spiderUrl, codSpider, brand, model, year } = opciones.iframe;
+    const params = new URLSearchParams({
+      businessType: "2",
+      vehicleStatus: "1",
+      isMoto: "true",
+      brand: String(brand),
+      model: String(model),
+      year: String(year),
+      price: String(valor),
+    });
+    if (leadId) params.set("idExterno", leadId);
+    setSolicitudSrc(`${spiderUrl}/${codSpider}?${params.toString()}`);
+    setCargandoSolicitud(false);
+  };
 
   return (
     <section
@@ -298,41 +359,48 @@ export default function SimuladorCuotas() {
                   : "[REFERENCIAL] Tasa y condiciones finales las define la tienda. Esta simulación es solo orientativa."}
             </p>
 
-            <motion.a
-              href={linkWhatsApp(mensajeWsp)}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              onClick={() => {
-                void fetch("/api/leads", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    origen: "simulador",
-                    presupuesto: formatCLP(valor),
-                    score: "warm",
-                    payload: {
-                      valor,
-                      pie,
-                      piePct,
-                      plazo,
-                      cuota: cuotaNum,
-                      cuotaReal: real,
-                      cae: real ? cuotaReal!.cae : null,
-                      totalCredito: real ? cuotaReal!.totalCredito : null,
-                    },
-                  }),
-                }).catch(() => {});
-              }}
-              className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
-            >
-              Cotizar financiamiento →
-            </motion.a>
+            {opciones ? (
+              <>
+                <motion.button
+                  type="button"
+                  onClick={abrirSolicitud}
+                  disabled={cargandoSolicitud}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600 disabled:opacity-60"
+                >
+                  {cargandoSolicitud ? "Abriendo…" : "Solicitar financiamiento →"}
+                </motion.button>
+                <a
+                  href={linkWhatsApp(mensajeWsp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={registrarLeadWsp}
+                  className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-md border border-line px-6 text-sm font-semibold text-muted transition-colors duration-200 hover:border-white/25 hover:text-white"
+                >
+                  Prefiero cotizar por WhatsApp
+                </a>
+              </>
+            ) : (
+              <motion.a
+                href={linkWhatsApp(mensajeWsp)}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                onClick={registrarLeadWsp}
+                className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+              >
+                Cotizar financiamiento →
+              </motion.a>
+            )}
           </div>
         </div>
       </div>
+
+      <ModalSolicitud src={solicitudSrc} onClose={() => setSolicitudSrc(null)} />
     </section>
   );
 }

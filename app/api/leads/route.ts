@@ -35,21 +35,28 @@ export async function POST(req: NextRequest) {
 
   try {
     const sb = getSupabase();
-    const { error } = await sb.from("leads").insert({
-      origen: resultado.data.origen,
-      nombre: resultado.data.nombre ?? null,
-      whatsapp: resultado.data.whatsapp ?? null,
-      presupuesto: resultado.data.presupuesto ?? null,
-      uso: resultado.data.uso ?? null,
-      experiencia: resultado.data.experiencia ?? null,
-      urgencia: resultado.data.urgencia ?? null,
-      score: resultado.data.score ?? null,
-      payload: resultado.data.payload ?? null,
-      atendido: false,
-    });
+    const { data, error } = await sb
+      .from("leads")
+      .insert({
+        origen: resultado.data.origen,
+        nombre: resultado.data.nombre ?? null,
+        whatsapp: resultado.data.whatsapp ?? null,
+        presupuesto: resultado.data.presupuesto ?? null,
+        uso: resultado.data.uso ?? null,
+        experiencia: resultado.data.experiencia ?? null,
+        urgencia: resultado.data.urgencia ?? null,
+        score: resultado.data.score ?? null,
+        payload: resultado.data.payload ?? null,
+        atendido: false,
+      })
+      .select("id")
+      .single();
 
     if (error) throw error;
-    return NextResponse.json({ ok: true }, { status: 201 });
+    // leadId → se usa como idExterno al abrir el iFrame de Autofin (cruce de la
+    // respuesta del webhook con el lead). El simulador lo consume; otros orígenes
+    // lo ignoran sin problema.
+    return NextResponse.json({ ok: true, leadId: data?.id ?? null }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/leads]", err);
     return NextResponse.json({ error: "Error al guardar el lead" }, { status: 500 });
