@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import sharp from "sharp";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 
@@ -118,6 +117,7 @@ export async function GET(req: NextRequest) {
     // modelo lo distorsione). Si algo falla, se sube la imagen sin logo.
     if (esPost) {
       try {
+        const sharp = (await import("sharp")).default;
         const lienzo = await sharp(imagenBuffer)
           .resize(POST_SIZE, POST_SIZE, { fit: "cover", position: "centre" })
           .png()
@@ -151,6 +151,7 @@ export async function GET(req: NextRequest) {
     let extensionSalida = "png";
     let contentTypeSalida = "image/png";
     try {
+      const sharp = (await import("sharp")).default;
       imagenBuffer = await sharp(imagenBuffer)
         .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
         .webp({ quality: 82 })

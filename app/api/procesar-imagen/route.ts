@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import sharp from "sharp";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 import { FONDOS_MARCA } from "@/lib/marca-fondos";
@@ -128,6 +127,7 @@ export async function POST(req: NextRequest) {
   let extension = "jpg";
   let contentType = "image/jpeg";
   try {
+    const sharp = (await import("sharp")).default;
     buffer = await sharp(original)
       .rotate()
       .resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true })
