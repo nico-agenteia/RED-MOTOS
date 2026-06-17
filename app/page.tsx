@@ -8,6 +8,7 @@ import SalaRoyalEnfield from "@/components/SalaRoyalEnfield";
 import SalaSuzuki from "@/components/SalaSuzuki";
 import RecomendadorIA from "@/components/RecomendadorIA";
 import SimuladorCuotas from "@/components/SimuladorCuotas";
+import Nosotros from "@/components/Nosotros";
 import Clientes from "@/components/Clientes";
 import Beneficios from "@/components/Beneficios";
 import Contacto from "@/components/Contacto";
@@ -34,6 +35,7 @@ export default async function Home() {
         <Marcas />
         <RecomendadorIA />
         <SimuladorCuotas />
+        <Nosotros />
         <Clientes />
         <Beneficios />
         <Contacto />
