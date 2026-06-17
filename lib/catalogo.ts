@@ -753,6 +753,8 @@ export const MARCAS_OFICIALES = [
   { nombre: "Royal Enfield", logo: "/logos/logo-royal-enfield.webp", insignia: true },
   { nombre: "Suzuki", logo: "/logos/logo-suzuki.webp", insignia: true },
   { nombre: "Kymco", logo: "/logos/logo-kymco.webp", insignia: false },
+  { nombre: "Zonsen", logo: "/logos/logo-zonsen.webp", insignia: false },
+  { nombre: "Cyclone", logo: "/logos/logo-cyclone.webp", insignia: false },
 ] as const;
 
 export const MOTOS_ROYAL_ENFIELD = CATALOGO.filter(
