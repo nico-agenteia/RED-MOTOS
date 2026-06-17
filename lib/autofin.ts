@@ -288,3 +288,111 @@ export async function obtenerCuotaMoto(
     totalCredito: aNumero(ct.TotalCredito) ?? 0,
   };
 }
+
+// ─── Fase 3 — Webhooks (Autofin → nosotros) ──────────────────────────────────
+
+/**
+ * Valida el secreto compartido del webhook entrante. Lo aceptamos por query
+ * `?token=` (igual que el resto de endpoints de Autofin) o por header
+ * `x-webhook-secret` / `Authorization: Bearer`. Si no hay secreto configurado,
+ * rechazamos: el endpoint nunca queda abierto.
+ */
+export function webhookAutorizado(req: { url: string; headers: Headers }): boolean {
+  const esperado = process.env.AUTOFIN_WEBHOOK_SECRET;
+  if (!esperado) return false;
+  const recibido =
+    new URL(req.url).searchParams.get("token") ??
+    req.headers.get("x-webhook-secret") ??
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+    "";
+  return recibido === esperado;
+}
+
+const RE_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function texto(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
+/** Subconjunto NO sensible del resultado de inyección que persistimos (§3.3). */
+export interface ResultadoNormalizado {
+  idTrinidad: number | null;
+  leadId: string | null;
+  estadoEvaluacion: string | null;
+  estadoTrinidad: string | null;
+  producto: string | null;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  estadoVehiculo: string | null;
+  precio: number | null;
+  pie: number | null;
+  plazo: number | null;
+  valorCuota: number | null;
+  cae: string | null;
+  nombre: string | null;
+  rut: string | null;
+  email: string | null;
+  telefono: string | null;
+  dealer: Record<string, unknown> | null;
+}
+
+/**
+ * Normaliza la notificación de resultado (ResumenSpider, §3.3). Privacidad:
+ * guardamos solo lo necesario para seguimiento — NO renta, situación laboral,
+ * tipo de contrato/renta, antigüedad, nacionalidad ni dirección.
+ */
+export function normalizarResultado(body: any): ResultadoNormalizado {
+  const r = body?.ResumenSpider ?? {};
+  const s = r?.DatosSolicitud ?? {};
+  const c = r?.DatosCliente ?? {};
+  const codExterno = texto(s?.CodigoExterno);
+  const nombre = [c?.Nombre, c?.ApPaterno, c?.ApMaterno]
+    .map((x: unknown) => texto(x))
+    .filter(Boolean)
+    .join(" ");
+  return {
+    idTrinidad: aNumero(s?.IdTrinidad) ?? null,
+    leadId: codExterno && RE_UUID.test(codExterno) ? codExterno : null,
+    estadoEvaluacion: texto(s?.EstadoEvaluacion),
+    estadoTrinidad: texto(s?.EstadoTrinidad),
+    producto: texto(s?.Producto),
+    marca: texto(s?.Marca),
+    modelo: texto(s?.Modelo),
+    anio: aNumero(s?.Annio) ?? null,
+    estadoVehiculo: texto(s?.EstadoVehiculo),
+    precio: aNumero(s?.PrecioVehiculo) ?? null,
+    pie: aNumero(s?.Pie) ?? null,
+    plazo: aNumero(s?.Plazo) ?? null,
+    valorCuota: aNumero(s?.ValorCuota) ?? null,
+    cae: texto(s?.CAE),
+    nombre: nombre || null,
+    rut: texto(c?.Rut),
+    email: texto(c?.Email),
+    telefono: texto(c?.Telefono),
+    dealer: (r?.DatosDealer as Record<string, unknown>) ?? null,
+  };
+}
+
+/** Seguimiento de estado (§3.4). */
+export interface EstadoNormalizado {
+  idTrinidad: number | null;
+  estadoNuevo: string | null;
+  codEstadoNuevo: number | null;
+  resolucion: string | null;
+  fechaCambioEstado: string | null;
+}
+
+export function normalizarEstado(body: any): EstadoNormalizado {
+  const s = body?.DatosSolicitud ?? {};
+  return {
+    idTrinidad: aNumero(s?.IdTrinidad) ?? null,
+    estadoNuevo: texto(s?.EstadoNuevo),
+    codEstadoNuevo: aNumero(s?.CodEstadoNuevo) ?? null,
+    resolucion: texto(s?.Resolucion),
+    fechaCambioEstado: texto(s?.FechaCambioEstado),
+  };
+}

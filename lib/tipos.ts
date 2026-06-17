@@ -61,6 +61,32 @@ export interface LeadRecomendador {
   urgencia: "Esta semana" | "Este mes" | "En 3 meses" | "Solo mirando";
 }
 
+/** Solicitud de financiamiento recibida desde los webhooks de Autofin (Araña). */
+export interface SolicitudAutofin {
+  id: string;
+  idTrinidad: number | null;
+  leadId: string | null;
+  estadoEvaluacion: string | null;
+  estadoTrinidad: string | null;
+  codEstado: number | null;
+  resolucion: string | null;
+  producto: string | null;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  precio: number | null;
+  pie: number | null;
+  plazo: number | null;
+  valorCuota: number | null;
+  cae: string | null;
+  nombre: string | null;
+  rut: string | null;
+  email: string | null;
+  telefono: string | null;
+  atendido: boolean;
+  creadoEn: string;
+}
+
 export type LeadScore = "hot" | "warm" | "cold";
 
 export interface Lead {

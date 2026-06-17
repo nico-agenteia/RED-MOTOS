@@ -5,16 +5,18 @@ import { motion } from "framer-motion";
 import MotoForm from "./MotoForm";
 import EstudioFotos from "./EstudioFotos";
 import BandejaLeads from "./BandejaLeads";
+import BandejaSolicitudes from "./BandejaSolicitudes";
 import { formatCLP } from "@/lib/utils";
 import type { Moto } from "@/lib/tipos";
 
-type Seccion = "stock" | "leads" | "fotos";
+type Seccion = "stock" | "leads" | "solicitudes" | "fotos";
 
 const POR_PAGINA = 8;
 
 const SECCIONES: { id: Seccion; etiqueta: string }[] = [
   { id: "stock", etiqueta: "Stock" },
   { id: "leads", etiqueta: "Leads" },
+  { id: "solicitudes", etiqueta: "Solicitudes" },
   { id: "fotos", etiqueta: "Estudio de Fotos" },
 ];
 
@@ -297,6 +299,7 @@ export default function AdminDashboard() {
           )}
 
           {seccion === "leads" && <BandejaLeads />}
+          {seccion === "solicitudes" && <BandejaSolicitudes />}
           {seccion === "fotos" && (
             <EstudioFotos
               onGuardarEnCatalogo={(url) => {
