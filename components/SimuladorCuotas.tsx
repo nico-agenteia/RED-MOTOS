@@ -5,33 +5,107 @@ import { motion } from "framer-motion";
 import gsap from "gsap";
 import { cuotaFrancesa, formatCLP } from "@/lib/utils";
 import { linkWhatsApp, TASA_MENSUAL_REFERENCIAL } from "@/lib/config";
+import type { OpcionesMoto, ResultadoCuota } from "@/lib/autofin";
 
-const VALOR_MIN = 500_000;
-const VALOR_MAX = 20_000_000;
+// Valores de respaldo: se usan mientras carga la config o si Autofin no responde
+// (modo referencial con cálculo local de cuota francesa).
+const PLAZOS_FALLBACK = [12, 18, 24, 36, 48];
+const VALOR_MIN_FB = 500_000;
+const VALOR_MAX_FB = 20_000_000;
+const PIE_MIN_FB = 0;
+const PIE_MAX_FB = 50;
 const VALOR_STEP = 100_000;
-const PIE_MAX_PCT = 50;
 const PIE_STEP_PCT = 5;
-const PLAZOS = [12, 18, 24, 36, 48] as const;
+
+type EstadoCuota = "idle" | "cargando" | "ok" | "error";
+
+const formatPct = (n: number) =>
+  n.toLocaleString("es-CL", { maximumFractionDigits: 2 });
 
 export default function SimuladorCuotas() {
+  const [opciones, setOpciones] = useState<OpcionesMoto | null>(null);
   const [valor, setValor] = useState(3_500_000);
   const [piePct, setPiePct] = useState(20);
-  const [plazo, setPlazo] = useState<(typeof PLAZOS)[number]>(24);
+  const [plazo, setPlazo] = useState(24);
+  const [cuotaReal, setCuotaReal] = useState<ResultadoCuota | null>(null);
+  const [estado, setEstado] = useState<EstadoCuota>("idle");
 
   const cuotaRef = useRef<HTMLSpanElement>(null);
   const cuotaAnimada = useRef({ val: 0 });
 
-  const pie = useMemo(
-    () => Math.round((valor * piePct) / 100),
-    [valor, piePct],
-  );
+  // Rangos efectivos: reales (Autofin) o de respaldo.
+  const plazos = opciones?.plazos.length ? opciones.plazos : PLAZOS_FALLBACK;
+  const valorMin = opciones?.precioMin ?? VALOR_MIN_FB;
+  const valorMax = opciones?.precioMax ?? VALOR_MAX_FB;
+  const pieMin = opciones?.pieMinPct ?? PIE_MIN_FB;
+  const pieMax = opciones?.pieMaxPct ?? PIE_MAX_FB;
+
+  const pie = useMemo(() => Math.round((valor * piePct) / 100), [valor, piePct]);
   const capital = valor - pie;
-  const cuota = useMemo(
+  const cuotaLocal = useMemo(
     () => cuotaFrancesa(capital, TASA_MENSUAL_REFERENCIAL, plazo),
     [capital, plazo],
   );
 
-  // Count-up animado de la cuota (GSAP) cada vez que cambia.
+  // Mostramos la cuota real cuando la tenemos y no hubo error; si no, la local.
+  const real = cuotaReal !== null && estado !== "error";
+  const cuotaNum = real ? cuotaReal!.valorCuota : cuotaLocal;
+
+  // 1) Cargar opciones reales desde Autofin (una vez) y encuadrar el estado.
+  useEffect(() => {
+    let activo = true;
+    fetch("/api/autofin/config")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("config"))))
+      .then((o: OpcionesMoto) => {
+        if (!activo) return;
+        setOpciones(o);
+        setValor((v) => Math.min(Math.max(v, o.precioMin), o.precioMax));
+        setPiePct((p) => Math.min(Math.max(p, o.pieMinPct), o.pieMaxPct));
+        setPlazo((pl) =>
+          o.plazos.includes(pl)
+            ? pl
+            : o.plazos.includes(24)
+              ? 24
+              : (o.plazos[Math.floor(o.plazos.length / 2)] ?? pl),
+        );
+      })
+      .catch(() => {
+        if (activo) setOpciones(null);
+      });
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  // 2) Pedir la cuota real a Autofin (con debounce para no spamear al deslizar).
+  useEffect(() => {
+    if (!opciones) return; // modo fallback: sin llamadas a Autofin
+    if (capital <= 0) {
+      setCuotaReal(null);
+      setEstado("error");
+      return;
+    }
+    setEstado("cargando");
+    const id = setTimeout(() => {
+      fetch("/api/autofin/cuota", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ precio: valor, montoPie: pie, plazo }),
+      })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("cuota"))))
+        .then((d: ResultadoCuota) => {
+          setCuotaReal(d);
+          setEstado("ok");
+        })
+        .catch(() => {
+          setCuotaReal(null);
+          setEstado("error");
+        });
+    }, 450);
+    return () => clearTimeout(id);
+  }, [opciones, valor, pie, plazo, capital]);
+
+  // Count-up animado de la cuota (GSAP) cada vez que cambia el monto mostrado.
   useEffect(() => {
     const span = cuotaRef.current;
     if (!span) return;
@@ -41,13 +115,13 @@ export default function SimuladorCuotas() {
     ).matches;
 
     if (reducirMotion) {
-      span.textContent = formatCLP(cuota);
-      cuotaAnimada.current.val = cuota;
+      span.textContent = formatCLP(cuotaNum);
+      cuotaAnimada.current.val = cuotaNum;
       return;
     }
 
     const tween = gsap.to(cuotaAnimada.current, {
-      val: cuota,
+      val: cuotaNum,
       duration: 0.5,
       ease: "power3.out",
       onUpdate: () => {
@@ -57,7 +131,7 @@ export default function SimuladorCuotas() {
     return () => {
       tween.kill();
     };
-  }, [cuota]);
+  }, [cuotaNum]);
 
   const alCambiarValor = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setValor(Number(e.target.value)),
@@ -68,10 +142,10 @@ export default function SimuladorCuotas() {
     [],
   );
 
-  const fillValor = ((valor - VALOR_MIN) / (VALOR_MAX - VALOR_MIN)) * 100;
-  const fillPie = (piePct / PIE_MAX_PCT) * 100;
+  const fillValor = ((valor - valorMin) / (valorMax - valorMin)) * 100;
+  const fillPie = pieMax > pieMin ? ((piePct - pieMin) / (pieMax - pieMin)) * 100 : 0;
 
-  const mensajeWsp = `Hola! Simulé un financiamiento en la web de Red Motos: moto de ${formatCLP(valor)}, pie de ${formatCLP(pie)} (${piePct}%), ${plazo} cuotas de aprox. ${formatCLP(cuota)}. ¿Me pueden ayudar a concretarlo?`;
+  const mensajeWsp = `Hola! Simulé un financiamiento en la web de Red Motos: moto de ${formatCLP(valor)}, pie de ${formatCLP(pie)} (${piePct}%), ${plazo} cuotas de ${formatCLP(cuotaNum)}${real ? ` (CAE ${formatPct(cuotaReal!.cae)}%)` : ""}. ¿Me pueden ayudar a concretarlo?`;
 
   return (
     <section
@@ -103,8 +177,8 @@ export default function SimuladorCuotas() {
               <input
                 id="slider-valor"
                 type="range"
-                min={VALOR_MIN}
-                max={VALOR_MAX}
+                min={valorMin}
+                max={valorMax}
                 step={VALOR_STEP}
                 value={valor}
                 onChange={alCambiarValor}
@@ -126,8 +200,8 @@ export default function SimuladorCuotas() {
               <input
                 id="slider-pie"
                 type="range"
-                min={0}
-                max={PIE_MAX_PCT}
+                min={pieMin}
+                max={pieMax}
                 step={PIE_STEP_PCT}
                 value={piePct}
                 onChange={alCambiarPie}
@@ -144,7 +218,7 @@ export default function SimuladorCuotas() {
                 aria-label="Plazo en cuotas"
                 className="flex flex-wrap gap-2"
               >
-                {PLAZOS.map((p) => (
+                {plazos.map((p) => (
                   <button
                     key={p}
                     type="button"
@@ -166,13 +240,25 @@ export default function SimuladorCuotas() {
 
           {/* Resultado */}
           <div className="flex flex-col justify-center rounded-xl border border-line bg-surface p-8">
-            <p className="label-mono !text-[11px]">Tu cuota mensual aprox.</p>
+            <div className="flex items-center justify-between">
+              <p className="label-mono !text-[11px]">Tu cuota mensual</p>
+              {real && (
+                <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400">
+                  Cuota real
+                </span>
+              )}
+            </div>
             <p
-              className="mt-2 font-display font-extrabold text-red-500"
-              style={{ fontSize: "clamp(48px, 7vw, 72px)", lineHeight: 1 }}
+              className="mt-2 font-display font-extrabold text-red-500 transition-opacity duration-200"
+              style={{
+                fontSize: "clamp(48px, 7vw, 72px)",
+                lineHeight: 1,
+                opacity: estado === "cargando" ? 0.55 : 1,
+              }}
             >
-              <span ref={cuotaRef}>{formatCLP(cuota)}</span>
+              <span ref={cuotaRef}>{formatCLP(cuotaNum)}</span>
             </p>
+
             <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-6">
               <div>
                 <dt className="label-mono !text-[11px]">Monto a financiar</dt>
@@ -186,11 +272,32 @@ export default function SimuladorCuotas() {
                   {plazo} cuotas
                 </dd>
               </div>
+              {real && (
+                <>
+                  <div>
+                    <dt className="label-mono !text-[11px]">CAE</dt>
+                    <dd className="font-display text-xl font-bold text-white">
+                      {formatPct(cuotaReal!.cae)}%
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="label-mono !text-[11px]">Costo total crédito</dt>
+                    <dd className="font-display text-xl font-bold text-white">
+                      {formatCLP(cuotaReal!.totalCredito)}
+                    </dd>
+                  </div>
+                </>
+              )}
             </dl>
+
             <p className="label-mono mt-6 !text-[10px] !leading-relaxed">
-              [REFERENCIAL] Tasa y condiciones finales las define la tienda.
-              Esta simulación es solo orientativa.
+              {real
+                ? "Cuota, CAE y costo total entregados por Autofin. Valores referenciales sujetos a evaluación crediticia."
+                : estado === "error"
+                  ? "No pudimos conectar con Autofin: mostramos un cálculo referencial. Las condiciones finales las define la tienda."
+                  : "[REFERENCIAL] Tasa y condiciones finales las define la tienda. Esta simulación es solo orientativa."}
             </p>
+
             <motion.a
               href={linkWhatsApp(mensajeWsp)}
               target="_blank"
@@ -206,7 +313,16 @@ export default function SimuladorCuotas() {
                     origen: "simulador",
                     presupuesto: formatCLP(valor),
                     score: "warm",
-                    payload: { valor, pie, piePct, plazo, cuota },
+                    payload: {
+                      valor,
+                      pie,
+                      piePct,
+                      plazo,
+                      cuota: cuotaNum,
+                      cuotaReal: real,
+                      cae: real ? cuotaReal!.cae : null,
+                      totalCredito: real ? cuotaReal!.totalCredito : null,
+                    },
                   }),
                 }).catch(() => {});
               }}
