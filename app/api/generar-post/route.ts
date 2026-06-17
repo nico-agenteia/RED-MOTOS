@@ -8,22 +8,24 @@ import type { Moto } from "@/lib/tipos";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 
-// El logo se compone aparte (en /api/kie-status, con sharp), por eso el prompt
-// pide dejar la esquina SUPERIOR IZQUIERDA limpia y NO dibujar logos ni texto.
+// La imagen sólo aporta el FONDO con la moto: el marco de marca (cabecera,
+// logos, footer, logo Red Motos) se compone aparte con next/og en kie-status.
+// Por eso el prompt pide la moto CENTRADA con espacio oscuro arriba y abajo y
+// SIN texto ni logos.
 const PROMPTS_KIE: Record<string, string> = {
   catalogo:
-    "Instagram post, square 1:1, of this exact motorcycle — unchanged model, colors and badges. " +
-    "Premium studio background with a tasteful color gradient that makes the bike pop, " +
-    "soft studio lighting, the motorcycle is the clear hero, centered and slightly lower in frame. " +
-    "Keep the TOP-LEFT area clean and uncluttered (reserved for a logo). " +
-    "No text, no watermarks, no logos in the image. Photorealistic, sharp, high-end commercial look. " +
+    "Square 1:1 image of this exact motorcycle — unchanged model, colors and badges. " +
+    "Dark premium studio background with a tasteful colored glow behind the bike that makes it pop. " +
+    "The motorcycle is the clear hero, fully visible and centered in the MIDDLE of the frame, " +
+    "with empty darker space at the TOP and BOTTOM of the image (reserved for overlays). " +
+    "No text, no watermarks, no logos. Photorealistic, sharp, high-end commercial look. " +
     "Keep the bike identical, do not alter model, colors, decals or proportions.",
   redes:
-    "Eye-catching cinematic Instagram post, square 1:1, of this exact motorcycle. " +
-    "Dramatic high-contrast background where the motorcycle clearly stands out (dark moody scene " +
-    "with a strong accent glow and rim light), the bike is the hero. " +
-    "Keep the TOP-LEFT corner clean and uncluttered (reserved for a logo) and leave negative space for text. " +
-    "No text, no watermarks, no logos in the image. Photorealistic, editorial, premium automotive ad look. " +
+    "Eye-catching cinematic square 1:1 image of this exact motorcycle. " +
+    "Dramatic high-contrast DARK scene with a strong accent glow and rim light so the motorcycle " +
+    "clearly stands out. The bike is the hero, fully visible and centered in the MIDDLE of the frame, " +
+    "with empty dark space at the TOP and BOTTOM (reserved for overlays). " +
+    "No text, no watermarks, no logos. Photorealistic, editorial, premium automotive ad look. " +
     "Keep the bike identical, do not alter model, colors, decals or proportions.",
 };
 

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
+import { renderPostInstagram } from "@/lib/post-instagram";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
-const POST_SIZE = 1080; // lado del post cuadrado de Instagram
 
 export async function GET(req: NextRequest) {
   const sesion = cookies().get(COOKIE_SESION)?.value;
@@ -112,54 +112,92 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Para posts: cuadrar 1:1 (Instagram) y componer el logo Red Motos en la
-    // esquina superior izquierda. Se hace con sharp (logo EXACTO, sin que el
-    // modelo lo distorsione). Si algo falla, se sube la imagen sin logo.
+    // Post de Instagram: armar la plantilla de marca (next/og) sobre la moto.
+    // Catálogo / redes: solo se entrega liviano en WebP.
+    let extensionSalida = "png";
+    let contentTypeSalida = "image/png";
+
     if (esPost) {
       try {
         const sharp = (await import("sharp")).default;
-        const lienzo = await sharp(imagenBuffer)
-          .resize(POST_SIZE, POST_SIZE, { fit: "cover", position: "centre" })
+        const origin = req.nextUrl.origin;
+
+        // Descarga una imagen y la devuelve como data-URI PNG (Satori no
+        // decodifica WebP con fiabilidad). null si no existe el archivo.
+        const aPngDataUri = async (url: string): Promise<string | null> => {
+          try {
+            const r = await fetch(url);
+            if (!r.ok) return null;
+            const b = Buffer.from(await r.arrayBuffer());
+            const png = await sharp(b).png().toBuffer();
+            return `data:image/png;base64,${png.toString("base64")}`;
+          } catch {
+            return null;
+          }
+        };
+
+        // Moto cuadrada como fondo del post.
+        const motoPng = await sharp(imagenBuffer)
+          .resize(1080, 1080, { fit: "cover", position: "centre" })
           .png()
           .toBuffer();
+        const motoDataUri = `data:image/png;base64,${motoPng.toString("base64")}`;
 
-        const logoRes = await fetch(
-          `${req.nextUrl.origin}/logos/red-motos-logo.webp`,
+        const logoDataUri = await aPngDataUri(
+          `${origin}/logos/red-motos-logo.webp`,
         );
-        if (logoRes.ok) {
-          const logoSrc = Buffer.from(await logoRes.arrayBuffer());
-          const logo = await sharp(logoSrc)
-            .resize({ width: Math.round(POST_SIZE * 0.2) })
-            .png()
-            .toBuffer();
-          const pad = Math.round(POST_SIZE * 0.05);
-          imagenBuffer = await sharp(lienzo)
-            .composite([{ input: logo, top: pad, left: pad }])
-            .png()
-            .toBuffer();
-        } else {
-          imagenBuffer = lienzo;
-        }
-      } catch (err) {
-        console.error("[kie-status] No se pudo componer el logo del post:", err);
-        // continúa con la imagen original sin logo
-      }
-    }
 
-    // Entregar SIEMPRE en WebP — formato liviano para que la web cargue rápido.
-    // Acota el tamaño máximo y comprime con buena calidad visual.
-    let extensionSalida = "png";
-    let contentTypeSalida = "image/png";
-    try {
-      const sharp = (await import("sharp")).default;
-      imagenBuffer = await sharp(imagenBuffer)
-        .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toBuffer();
-      extensionSalida = "webp";
-      contentTypeSalida = "image/webp";
-    } catch (err) {
-      console.error("[kie-status] No se pudo convertir a WebP:", err);
+        // Las 5 marcas del catálogo; las que aún no tienen logo se omiten solas.
+        const archivosMarca = [
+          "logo-royal-enfield",
+          "logo-suzuki",
+          "logo-kymco",
+          "logo-cyclone",
+          "logo-zonsen",
+        ];
+        const marcaLogos: string[] = [];
+        for (const f of archivosMarca) {
+          const uri = await aPngDataUri(`${origin}/logos/${f}.webp`);
+          if (uri) marcaLogos.push(uri);
+        }
+
+        const plantilla = await renderPostInstagram({
+          origin,
+          motoDataUri,
+          logoDataUri,
+          marcaLogos,
+        });
+        imagenBuffer = await sharp(plantilla).webp({ quality: 88 }).toBuffer();
+        extensionSalida = "webp";
+        contentTypeSalida = "image/webp";
+      } catch (err) {
+        console.error("[kie-status] No se pudo componer el post:", err);
+        // Fallback: al menos entregar la moto cuadrada en WebP.
+        try {
+          const sharp = (await import("sharp")).default;
+          imagenBuffer = await sharp(imagenBuffer)
+            .resize(1080, 1080, { fit: "cover", position: "centre" })
+            .webp({ quality: 85 })
+            .toBuffer();
+          extensionSalida = "webp";
+          contentTypeSalida = "image/webp";
+        } catch {
+          /* se sube la imagen original sin convertir */
+        }
+      }
+    } else {
+      // Catálogo / redes: entregar liviano en WebP.
+      try {
+        const sharp = (await import("sharp")).default;
+        imagenBuffer = await sharp(imagenBuffer)
+          .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toBuffer();
+        extensionSalida = "webp";
+        contentTypeSalida = "image/webp";
+      } catch (err) {
+        console.error("[kie-status] No se pudo convertir a WebP:", err);
+      }
     }
 
     // Subir al bucket correcto según tipo de tarea
