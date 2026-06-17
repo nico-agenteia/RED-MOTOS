@@ -85,6 +85,11 @@ const LINKS_FOOTER = [
 ];
 
 export default function Contacto() {
+  const matriz = SUCURSALES.find((s) => s.esMatriz) ?? SUCURSALES[0];
+  const mapaSrc = `https://www.google.com/maps?q=${encodeURIComponent(
+    `${matriz.direccion}, Santiago`,
+  )}&output=embed`;
+
   return (
     <section
       id="contacto"
@@ -100,46 +105,58 @@ export default function Contacto() {
           Visítanos
         </h2>
 
-        {/* Tarjetas de sucursal */}
-        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {SUCURSALES.map((s, i) => (
-            <motion.article
-              key={s.nombre}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{
-                delay: i * 0.08,
-                duration: 0.4,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className="rounded-xl border border-line bg-surface-2 p-6"
+        {/* Casa Matriz + mapa */}
+        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 md:grid-cols-2">
+          {/* Tarjeta Casa Matriz */}
+          <motion.article
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="flex flex-col rounded-xl border border-line bg-surface-2 p-6 md:p-8"
+          >
+            <div className="flex items-start justify-between">
+              <IconoPin />
+              {matriz.esMatriz && (
+                <span className="rounded-sm bg-red-500 px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white">
+                  Casa Matriz
+                </span>
+              )}
+            </div>
+            <h3 className="mt-4 font-display text-2xl font-bold uppercase text-white md:text-3xl">
+              {matriz.nombre}
+            </h3>
+            <p className="mt-2 text-base text-muted">{matriz.direccion}</p>
+            <p className="mt-1 text-sm text-muted/80">{HORARIO.completo}</p>
+            <a
+              href={matriz.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto inline-flex min-h-[44px] items-center pt-6 text-sm font-semibold text-red-500 transition-colors duration-200 hover:text-red-600"
             >
-              <div className="flex items-start justify-between">
-                <IconoPin />
-                {s.esMatriz && (
-                  <span className="rounded-sm bg-red-500 px-2 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white">
-                    Casa Matriz
-                  </span>
-                )}
-              </div>
-              <h3 className="mt-4 font-display text-2xl font-bold uppercase text-white">
-                {s.nombre}
-              </h3>
-              <p className="mt-1 text-sm text-muted">{s.direccion}</p>
-              <a
-                href={s.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-red-500 transition-colors duration-200 hover:text-red-600"
-              >
-                Cómo llegar →
-              </a>
-            </motion.article>
-          ))}
-        </div>
+              Cómo llegar →
+            </a>
+          </motion.article>
 
-        <p className="label-mono mt-10 text-center">{HORARIO.completo}</p>
+          {/* Mapa de la tienda */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="min-h-[320px] overflow-hidden rounded-xl border border-line bg-surface-2"
+          >
+            <iframe
+              title={`Mapa de ${matriz.nombre} — ${matriz.direccion}`}
+              src={mapaSrc}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+              className="h-full min-h-[320px] w-full"
+              style={{ border: 0, filter: "grayscale(0.2) contrast(1.05)" }}
+            />
+          </motion.div>
+        </div>
 
         {/* CTA WhatsApp grande */}
         <div className="mt-10 flex justify-center">
