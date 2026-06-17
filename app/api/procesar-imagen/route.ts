@@ -24,7 +24,7 @@ function promptCatalogo(marca: Marca): string {
   );
 }
 
-// El estilo "Redes" se compone luego con la plantilla de Instagram (next/og),
+// El estilo "Redes" se compone luego con la plantilla de Instagram (Satori),
 // por eso la moto debe quedar centrada con espacio oscuro arriba y abajo.
 const PROMPT_REDES =
   "Eye-catching cinematic square 1:1 image of this exact motorcycle. " +

@@ -95,12 +95,9 @@ export async function GET(req: NextRequest) {
       tarea = data;
     } catch { /* continuar sin datos de tarea */ }
 
-    // Se aplica la plantilla de Instagram tanto al Generador de posts ("post")
-    // como al estilo "Redes" del Estudio de fotos ("foto-redes").
-    const aplicarPlantilla =
-      tarea?.tipo === "post" || tarea?.tipo === "foto-redes";
-    const meta = tarea?.meta as Record<string, unknown> | null | undefined;
-    const caption = meta?.caption as string | undefined;
+    // El estilo "Redes" del Estudio de fotos ("foto-redes") se compone con la
+    // plantilla de marca de Instagram.
+    const aplicarPlantilla = tarea?.tipo === "foto-redes";
 
     // Descargar imagen desde KIE
     let imagenBuffer: Buffer;
@@ -115,7 +112,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Post de Instagram: armar la plantilla de marca (next/og) sobre la moto.
+    // Post de Instagram: armar la plantilla de marca (Satori) sobre la moto.
     // Catálogo / redes: solo se entrega liviano en WebP.
     let extensionSalida = "png";
     let contentTypeSalida = "image/png";
@@ -164,13 +161,18 @@ export async function GET(req: NextRequest) {
           if (uri) marcaLogos.push(uri);
         }
 
-        const plantilla = await renderPostInstagram({
-          origin,
+        const [fontBold, fontMedium] = await Promise.all([
+          fetch(`${origin}/fonts/Oswald-700.ttf`).then((r) => r.arrayBuffer()),
+          fetch(`${origin}/fonts/Oswald-500.ttf`).then((r) => r.arrayBuffer()),
+        ]);
+        const svg = await renderPostInstagram({
           motoDataUri,
           logoDataUri,
           marcaLogos,
+          fontBold,
+          fontMedium,
         });
-        imagenBuffer = await sharp(plantilla).webp({ quality: 88 }).toBuffer();
+        imagenBuffer = await sharp(Buffer.from(svg)).webp({ quality: 88 }).toBuffer();
         extensionSalida = "webp";
         contentTypeSalida = "image/webp";
       } catch (err) {
@@ -226,11 +228,7 @@ export async function GET(req: NextRequest) {
     // Actualizar ia_tareas
     await sb.from("ia_tareas").update({ estado: "listo", output_url: imagenUrl }).eq("task_id", taskId);
 
-    return NextResponse.json({
-      estado: "listo",
-      imagenUrl,
-      ...(caption ? { caption } : {}),
-    });
+    return NextResponse.json({ estado: "listo", imagenUrl });
   }
 
   // Estado desconocido — seguir polling

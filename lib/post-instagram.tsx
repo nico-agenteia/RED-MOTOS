@@ -1,38 +1,38 @@
-// Plantilla del post de Instagram (1080×1080) renderizada con next/og (Satori).
+// Plantilla del post de Instagram (1080×1080) renderizada con Satori → SVG.
 // Compone, sobre la moto generada por la IA, el marco de marca de Red Motos:
 // cabecera "Concesionario Oficial" + dirección, fila de marcas, footer con
 // redes + "Cotiza tu modelo 0KM" + web, y el logo Red Motos al centro.
 //
 // Las imágenes (moto + logos) llegan como data-URI PNG (Satori no decodifica
-// WebP de forma fiable). Devuelve un Buffer PNG listo para convertir a WebP.
+// WebP de forma fiable). Las fuentes llegan como ArrayBuffer (Oswald), para no
+// depender de fuentes del sistema. Devuelve un Buffer PNG.
 
-import { ImageResponse } from "next/og";
+import satori from "satori";
 
 export interface OpcionesPostInstagram {
-  /** Origen del sitio para cargar las fuentes desde /public/fonts. */
-  origin: string;
   /** Moto generada por la IA, como data-URI PNG (fondo del post). */
   motoDataUri: string;
   /** Logo Red Motos, como data-URI PNG (o null si no se pudo cargar). */
   logoDataUri: string | null;
   /** Logos de marca disponibles, como data-URI PNG. */
   marcaLogos: string[];
+  /** Oswald 700 (.ttf) como ArrayBuffer. */
+  fontBold: ArrayBuffer;
+  /** Oswald 500 (.ttf) como ArrayBuffer. */
+  fontMedium: ArrayBuffer;
 }
 
 const ROJO = "#E2231A";
 
+/** Devuelve el SVG (texto ya vectorizado) del post 1080×1080. */
 export async function renderPostInstagram({
-  origin,
   motoDataUri,
   logoDataUri,
   marcaLogos,
-}: OpcionesPostInstagram): Promise<Buffer> {
-  const [oswald700, oswald500] = await Promise.all([
-    fetch(`${origin}/fonts/Oswald-700.ttf`).then((r) => r.arrayBuffer()),
-    fetch(`${origin}/fonts/Oswald-500.ttf`).then((r) => r.arrayBuffer()),
-  ]);
-
-  const img = new ImageResponse(
+  fontBold,
+  fontMedium,
+}: OpcionesPostInstagram): Promise<string> {
+  return satori(
     (
       <div
         style={{
@@ -72,7 +72,7 @@ export async function renderPostInstagram({
             bottom: 0,
             left: 0,
             width: 1080,
-            height: 440,
+            height: 450,
             display: "flex",
             backgroundImage:
               "linear-gradient(to top, rgba(0,0,0,0.97), rgba(0,0,0,0))",
@@ -124,7 +124,7 @@ export async function renderPostInstagram({
               marginTop: 8,
             }}
           >
-            AV. VICUÑA MACKENNA 8264 · LA FLORIDA
+            AV. VICUÑA MACKENNA 8264, LA FLORIDA
           </div>
           <div
             style={{
@@ -177,7 +177,7 @@ export async function renderPostInstagram({
         <div
           style={{
             position: "absolute",
-            bottom: 70,
+            bottom: 72,
             left: 0,
             width: 1080,
             display: "flex",
@@ -198,7 +198,7 @@ export async function renderPostInstagram({
                 letterSpacing: 3,
               }}
             >
-              SÍGUENOS
+              SIGUENOS
             </div>
             <div
               style={{
@@ -218,7 +218,7 @@ export async function renderPostInstagram({
                 fontWeight: 500,
               }}
             >
-              FB · REDMOTOSCHILE
+              FB / REDMOTOSCHILE
             </div>
           </div>
 
@@ -277,7 +277,7 @@ export async function renderPostInstagram({
                 letterSpacing: 2,
               }}
             >
-              CONTÁCTANOS
+              CONTACTANOS
             </div>
           </div>
         </div>
@@ -314,11 +314,9 @@ export async function renderPostInstagram({
       width: 1080,
       height: 1080,
       fonts: [
-        { name: "Oswald", data: oswald700, weight: 700, style: "normal" },
-        { name: "Oswald", data: oswald500, weight: 500, style: "normal" },
+        { name: "Oswald", data: fontBold, weight: 700, style: "normal" },
+        { name: "Oswald", data: fontMedium, weight: 500, style: "normal" },
       ],
     },
   );
-
-  return Buffer.from(await img.arrayBuffer());
 }
