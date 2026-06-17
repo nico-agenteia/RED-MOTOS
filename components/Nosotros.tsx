@@ -23,12 +23,6 @@ const VALORES = [
   { icono: "check", texto: "Alcance a todo Chile" },
 ];
 
-const EQUIPO = [
-  { foto: "/nosotros/team-1.jpg", nombre: "Nacho Armengol Merino" },
-  { foto: "/nosotros/team-2.jpg", nombre: "Paola Figueroa Escolano" },
-  { foto: "/nosotros/team-1.jpg", nombre: "Alejo Pizarro Molina" },
-];
-
 const GALERIA_IG = [
   { img: "/nosotros/gal-1.jpg", link: "https://www.instagram.com/p/ChLEl9QpF-5/" },
   { img: "/nosotros/gal-2.jpg", link: "https://www.instagram.com/p/ChXzL9LJN00/" },
@@ -148,12 +142,6 @@ export default function Nosotros() {
     start: "top 78%",
   });
 
-  const teamRef = useReveal<HTMLDivElement>(".nos-team-reveal", {
-    y: 40,
-    stagger: 0.12,
-    start: "top 80%",
-  });
-
   const igRef = useReveal<HTMLDivElement>(".nos-ig-reveal", {
     y: 30,
     stagger: 0.08,
@@ -222,47 +210,6 @@ export default function Nosotros() {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Equipo ───────────────────────────────────────────────────── */}
-      <div className="bg-surface py-24">
-        <div ref={teamRef} className="mx-auto max-w-7xl px-4 md:px-8">
-          <p className="nos-team-reveal label-mono mb-3">Nuestro equipo</p>
-          <h3
-            className="nos-team-reveal headline-display text-white"
-            style={{ fontSize: "clamp(36px, 5vw, 60px)" }}
-          >
-            Las personas detrás de{" "}
-            <span className="text-red-500">Red Motos</span>
-          </h3>
-
-          <div className="nos-team-reveal mt-14 grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-3">
-            {EQUIPO.map((p, i) => (
-              <motion.div
-                key={p.nombre}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: i * 0.1, duration: 0.5, ease: EASE }}
-                className="group text-center"
-              >
-                <div className="overflow-hidden rounded-xl">
-                  <img
-                    src={p.foto}
-                    alt={p.nombre}
-                    width={400}
-                    height={400}
-                    loading="lazy"
-                    className="aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <p className="mt-4 font-display text-xl font-bold uppercase tracking-wide text-white">
-                  {p.nombre}
-                </p>
-              </motion.div>
-            ))}
           </div>
         </div>
       </div>
