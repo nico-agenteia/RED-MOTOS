@@ -146,13 +146,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Entregar SIEMPRE en WebP — formato liviano para que la web cargue rápido.
+    // Acota el tamaño máximo y comprime con buena calidad visual.
+    let extensionSalida = "png";
+    let contentTypeSalida = "image/png";
+    try {
+      imagenBuffer = await sharp(imagenBuffer)
+        .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer();
+      extensionSalida = "webp";
+      contentTypeSalida = "image/webp";
+    } catch (err) {
+      console.error("[kie-status] No se pudo convertir a WebP:", err);
+    }
+
     // Subir al bucket correcto según tipo de tarea
     const bucket = esPost ? "posts" : "catalogo";
-    const nombreArchivo = `ia-${taskId}.png`;
+    const nombreArchivo = `ia-${taskId}.${extensionSalida}`;
     const { error: uploadError } = await sb.storage
       .from(bucket)
       .upload(nombreArchivo, imagenBuffer, {
-        contentType: "image/png",
+        contentType: contentTypeSalida,
         upsert: true,
       });
 

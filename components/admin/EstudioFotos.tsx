@@ -30,7 +30,10 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
   const [resultadoUrl, setResultadoUrl] = useState<string | null>(null);
 
   function cargarArchivo(file: File) {
-    if (!file.type.startsWith("image/")) {
+    const esImagen =
+      file.type.startsWith("image/") ||
+      /\.(jpe?g|png|webp|avif|gif|bmp|tiff?|heic|heif)$/i.test(file.name);
+    if (!esImagen) {
       setError("El archivo debe ser una imagen");
       return;
     }
@@ -147,7 +150,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
             <input
               ref={inputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.avif,.tiff,.tif,.bmp"
               className="sr-only"
               onChange={(e) => {
                 const file = e.target.files?.[0];

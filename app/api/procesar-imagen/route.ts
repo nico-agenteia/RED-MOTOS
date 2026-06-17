@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import sharp from "sharp";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 import { FONDOS_MARCA } from "@/lib/marca-fondos";
@@ -98,7 +99,10 @@ export async function POST(req: NextRequest) {
       { status: 422 },
     );
   }
-  if (!foto.type.startsWith("image/")) {
+  const esImagen =
+    foto.type.startsWith("image/") ||
+    /\.(jpe?g|png|webp|avif|gif|bmp|tiff?|heic|heif)$/i.test(foto.name);
+  if (!esImagen) {
     return NextResponse.json(
       { error: "El archivo debe ser una imagen" },
       { status: 422 },
@@ -115,16 +119,31 @@ export async function POST(req: NextRequest) {
   //    (bucket público: KIE puede acceder directamente sin URL firmada)
   const sb = getSupabase();
   const archivoId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const extension = foto.name.split(".").pop() ?? "jpg";
-  const nombreArchivo = `raw/${archivoId}.${extension}`;
 
-  const bytes = await foto.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  // Normalizar el archivo subido a JPEG (auto-orientado por EXIF y con el tamaño
+  // acotado), así KIE puede leerlo venga en el formato que venga (PNG, WebP,
+  // AVIF, TIFF, HEIC…). Si sharp no logra decodificarlo, se sube el original.
+  const original = Buffer.from(await foto.arrayBuffer());
+  let buffer: Buffer = original;
+  let extension = "jpg";
+  let contentType = "image/jpeg";
+  try {
+    buffer = await sharp(original)
+      .rotate()
+      .resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+  } catch {
+    buffer = original;
+    extension = (foto.name.split(".").pop() || "jpg").toLowerCase();
+    contentType = foto.type || "application/octet-stream";
+  }
+  const nombreArchivo = `raw/${archivoId}.${extension}`;
 
   const { error: uploadError } = await sb.storage
     .from("catalogo")
     .upload(nombreArchivo, buffer, {
-      contentType: foto.type,
+      contentType,
       upsert: false,
     });
 
