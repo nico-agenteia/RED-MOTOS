@@ -7,7 +7,9 @@ import { CATALOGO } from "@/lib/catalogo";
 import { formatCLP } from "@/lib/utils";
 import { linkWhatsApp } from "@/lib/config";
 import { FICHAS, type FichaTecnica } from "@/lib/fichas";
+import { precioVigente } from "@/lib/catalogo";
 import type { Moto } from "@/lib/tipos";
+import SimuladorInline from "@/components/SimuladorInline";
 
 function mensajeCotizacion(moto: Moto): string {
   return `Hola! Vengo de la web de Red Motos. Me interesa la ${moto.marca} ${moto.modelo}. ¿Me pueden dar información y cotización?`;
@@ -530,71 +532,67 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
         </motion.section>
       )}
 
-      {/* ── Precio ─────────────────────────────────────────────────────────── */}
+      {/* ── Precio + Simulador de financiamiento ──────────────────────────── */}
       <motion.section
         variants={stagger}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-40px" }}
-        aria-label="Precio"
+        aria-label="Precio y financiamiento"
         className="border-t border-line"
       >
-        <div className="mx-auto max-w-4xl px-4 py-10 md:px-8">
-          <motion.p variants={fadeUp} className="label-mono mb-4 !text-[11px]">
-            Precio
-          </motion.p>
-          <motion.div variants={fadeUp} className="flex flex-wrap items-baseline gap-4">
-            {moto.precioBono !== null ? (
-              <>
-                <span className="text-xl text-muted line-through">
-                  {formatCLP(moto.precioLista)}
-                </span>
-                <span className="font-display font-extrabold text-red-500" style={{ fontSize: "clamp(40px, 7vw, 72px)" }}>
-                  {formatCLP(moto.precioBono)}
-                </span>
-                <span className="rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
-                  BONO
-                </span>
-              </>
-            ) : (
-              <span className="font-display font-extrabold text-white" style={{ fontSize: "clamp(40px, 7vw, 72px)" }}>
-                {formatCLP(moto.precioLista)}
-              </span>
-            )}
-          </motion.div>
-        </div>
-      </motion.section>
+        <div className="mx-auto max-w-5xl px-4 py-10 md:px-8">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+            {/* Columna izquierda: precio + CTA rápido */}
+            <motion.div variants={fadeUp} className="flex flex-col justify-center">
+              <p className="label-mono mb-4 !text-[11px]">Precio</p>
+              <div className="flex flex-wrap items-baseline gap-4">
+                {moto.precioBono !== null ? (
+                  <>
+                    <span className="text-xl text-muted line-through">
+                      {formatCLP(moto.precioLista)}
+                    </span>
+                    <span className="font-display font-extrabold text-red-500" style={{ fontSize: "clamp(36px, 6vw, 64px)" }}>
+                      {formatCLP(moto.precioBono)}
+                    </span>
+                    <span className="rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
+                      BONO
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-display font-extrabold text-white" style={{ fontSize: "clamp(36px, 6vw, 64px)" }}>
+                    {formatCLP(moto.precioLista)}
+                  </span>
+                )}
+              </div>
 
-      {/* ── CTAs ───────────────────────────────────────────────────────────── */}
-      <motion.section
-        variants={stagger}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-40px" }}
-        aria-label="Acciones"
-        className="border-t border-line"
-      >
-        <div className="mx-auto flex max-w-4xl flex-wrap gap-4 px-4 py-10 md:px-8">
-          <motion.a
-            variants={fadeUp}
-            href={linkWhatsApp(mensajeCotizacion(moto))}
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="inline-flex min-h-[48px] items-center rounded-md bg-red-500 px-8 font-semibold text-white transition-colors duration-200 hover:bg-red-600"
-          >
-            Cotizar por WhatsApp
-          </motion.a>
-          <motion.div variants={fadeUp}>
-            <Link
-              href="/#catalogo"
-              className="inline-flex min-h-[48px] items-center rounded-md border border-line px-8 font-semibold text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5"
-            >
-              ← Volver al catálogo
-            </Link>
-          </motion.div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a
+                  href={linkWhatsApp(mensajeCotizacion(moto))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[48px] items-center rounded-md bg-red-500 px-8 font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+                >
+                  Cotizar por WhatsApp
+                </a>
+                <Link
+                  href="/#catalogo"
+                  className="inline-flex min-h-[48px] items-center rounded-md border border-line px-8 font-semibold text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5"
+                >
+                  ← Catálogo
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Columna derecha: simulador inline */}
+            <motion.div variants={fadeUp}>
+              <SimuladorInline
+                precio={precioVigente(moto)}
+                modeloNombre={moto.modelo}
+                marcaNombre={moto.marca}
+              />
+            </motion.div>
+          </div>
         </div>
       </motion.section>
 

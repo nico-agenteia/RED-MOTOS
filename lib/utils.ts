@@ -18,6 +18,18 @@ export function cuotaFrancesa(
   return (capital * tasaMensual * factor) / (factor - 1);
 }
 
+/** Inversa: dado un monto de cuota mensual, devuelve el capital máximo financiable. */
+export function capitalDesdeQuota(
+  cuotaMensual: number,
+  tasaMensual: number,
+  cuotas: number,
+): number {
+  if (cuotaMensual <= 0 || cuotas <= 0) return 0;
+  if (tasaMensual === 0) return cuotaMensual * cuotas;
+  const factor = Math.pow(1 + tasaMensual, cuotas);
+  return (cuotaMensual * (factor - 1)) / (tasaMensual * factor);
+}
+
 export const RANGOS_PRESUPUESTO = [
   { etiqueta: "Hasta $2M", min: 0, max: 2_000_000 },
   { etiqueta: "$2M–$4M", min: 2_000_000, max: 4_000_000 },

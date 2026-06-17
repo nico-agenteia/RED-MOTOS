@@ -7,6 +7,7 @@ import Catalogo from "@/components/Catalogo";
 import SalaRoyalEnfield from "@/components/SalaRoyalEnfield";
 import SalaSuzuki from "@/components/SalaSuzuki";
 import RecomendadorIA from "@/components/RecomendadorIA";
+import BuscadorPorCuota from "@/components/BuscadorPorCuota";
 import SimuladorCuotas from "@/components/SimuladorCuotas";
 import Nosotros from "@/components/Nosotros";
 import Clientes from "@/components/Clientes";
@@ -34,6 +35,7 @@ export default async function Home() {
         <Catalogo motos={motos} />
         <Marcas />
         <RecomendadorIA />
+        <BuscadorPorCuota />
         <SimuladorCuotas />
         <Nosotros />
         <Clientes />
