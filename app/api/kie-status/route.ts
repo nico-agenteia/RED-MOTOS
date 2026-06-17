@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import sharp from "sharp";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
+const POST_SIZE = 1080; // lado del post cuadrado de Instagram
 
 export async function GET(req: NextRequest) {
   const sesion = cookies().get(COOKIE_SESION)?.value;
@@ -109,6 +111,39 @@ export async function GET(req: NextRequest) {
         { error: "No se pudo descargar la imagen de KIE" },
         { status: 502 },
       );
+    }
+
+    // Para posts: cuadrar 1:1 (Instagram) y componer el logo Red Motos en la
+    // esquina superior izquierda. Se hace con sharp (logo EXACTO, sin que el
+    // modelo lo distorsione). Si algo falla, se sube la imagen sin logo.
+    if (esPost) {
+      try {
+        const lienzo = await sharp(imagenBuffer)
+          .resize(POST_SIZE, POST_SIZE, { fit: "cover", position: "centre" })
+          .png()
+          .toBuffer();
+
+        const logoRes = await fetch(
+          `${req.nextUrl.origin}/logos/red-motos-logo.webp`,
+        );
+        if (logoRes.ok) {
+          const logoSrc = Buffer.from(await logoRes.arrayBuffer());
+          const logo = await sharp(logoSrc)
+            .resize({ width: Math.round(POST_SIZE * 0.2) })
+            .png()
+            .toBuffer();
+          const pad = Math.round(POST_SIZE * 0.05);
+          imagenBuffer = await sharp(lienzo)
+            .composite([{ input: logo, top: pad, left: pad }])
+            .png()
+            .toBuffer();
+        } else {
+          imagenBuffer = lienzo;
+        }
+      } catch (err) {
+        console.error("[kie-status] No se pudo componer el logo del post:", err);
+        // continúa con la imagen original sin logo
+      }
     }
 
     // Subir al bucket correcto según tipo de tarea

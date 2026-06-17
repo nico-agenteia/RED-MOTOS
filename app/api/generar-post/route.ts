@@ -8,11 +8,23 @@ import type { Moto } from "@/lib/tipos";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 
+// El logo se compone aparte (en /api/kie-status, con sharp), por eso el prompt
+// pide dejar la esquina SUPERIOR IZQUIERDA limpia y NO dibujar logos ni texto.
 const PROMPTS_KIE: Record<string, string> = {
   catalogo:
-    "Professional product photography of a motorcycle on a pure white background, studio lighting, clean isolated shot, commercial quality, high detail",
+    "Instagram post, square 1:1, of this exact motorcycle — unchanged model, colors and badges. " +
+    "Premium studio background with a tasteful color gradient that makes the bike pop, " +
+    "soft studio lighting, the motorcycle is the clear hero, centered and slightly lower in frame. " +
+    "Keep the TOP-LEFT area clean and uncluttered (reserved for a logo). " +
+    "No text, no watermarks, no logos in the image. Photorealistic, sharp, high-end commercial look. " +
+    "Keep the bike identical, do not alter model, colors, decals or proportions.",
   redes:
-    "Cinematic motorcycle lifestyle photography, dramatic moody lighting, dark atmospheric background, high contrast editorial style, professional photography",
+    "Eye-catching cinematic Instagram post, square 1:1, of this exact motorcycle. " +
+    "Dramatic high-contrast background where the motorcycle clearly stands out (dark moody scene " +
+    "with a strong accent glow and rim light), the bike is the hero. " +
+    "Keep the TOP-LEFT corner clean and uncluttered (reserved for a logo) and leave negative space for text. " +
+    "No text, no watermarks, no logos in the image. Photorealistic, editorial, premium automotive ad look. " +
+    "Keep the bike identical, do not alter model, colors, decals or proportions.",
 };
 
 async function getMotoById(id: string): Promise<Moto | null> {
@@ -146,10 +158,10 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: "google/nano-banana-edit",
-        taskType: "image-to-image",
-        inputImageUrl: moto.img,
-        prompt: kiePrompt,
-        negativePrompt: "blurry, low quality, watermark, text, logo",
+        input: {
+          prompt: kiePrompt,
+          image_urls: [moto.img],
+        },
       }),
     });
 

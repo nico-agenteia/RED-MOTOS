@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { FONDOS_MARCA, MARCAS_FONDO } from "@/lib/marca-fondos";
+import type { Marca } from "@/lib/tipos";
 
 // TODO: conectar KIE_API_KEY en .env.local — sin la key, el endpoint
 // /api/procesar-imagen responde con un mensaje claro y este componente
@@ -21,6 +23,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
   const [archivo, setArchivo] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [estilo, setEstilo] = useState<Estilo>("catalogo");
+  const [marca, setMarca] = useState<Marca>("Royal Enfield");
   const [arrastrando, setArrastrando] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +48,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
       const formData = new FormData();
       formData.append("foto", archivo);
       formData.append("estilo", estilo);
+      formData.append("marca", marca);
 
       const res = await fetch("/api/procesar-imagen", {
         method: "POST",
@@ -151,6 +155,42 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
               }}
             />
           </div>
+
+          {/* Marca → define el color de fondo del catálogo */}
+          {estilo === "catalogo" && (
+            <div>
+              <p className="label-mono mb-2 !text-[11px]">
+                Marca (define el fondo)
+              </p>
+              <div
+                className="flex flex-wrap gap-2"
+                role="radiogroup"
+                aria-label="Marca de la moto"
+              >
+                {MARCAS_FONDO.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={marca === m}
+                    onClick={() => setMarca(m)}
+                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors duration-200 ${
+                      marca === m
+                        ? "border-red-500 bg-red-500/10 text-white"
+                        : "border-line bg-surface-2 text-muted hover:text-white"
+                    }`}
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full ring-1 ring-white/20"
+                      style={{ backgroundColor: FONDOS_MARCA[m].swatch }}
+                      aria-hidden="true"
+                    />
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <p className="label-mono mb-2 !text-[11px]">Estilo</p>

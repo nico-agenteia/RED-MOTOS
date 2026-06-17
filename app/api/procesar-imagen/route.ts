@@ -2,26 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
+import { FONDOS_MARCA } from "@/lib/marca-fondos";
+import type { Marca } from "@/lib/tipos";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
-// Build marker: v2 KIE input-wrapper — fuerza redeploy en Vercel
+// Build marker: v3 KIE input-wrapper + fondo por marca — fuerza redeploy
 
-const PROMPTS: Record<string, string> = {
-  catalogo:
+/** Prompt de catálogo con el fondo establecido de la marca seleccionada. */
+function promptCatalogo(marca: Marca): string {
+  const fondo =
+    FONDOS_MARCA[marca]?.prompt ??
+    "a clean dark seamless studio background, neutral charcoal gradient, soft rim light";
+  return (
     "Studio product shot of this exact motorcycle, unchanged model/colors/badges. " +
-    "Clean seamless studio background, neutral light grey (#f2f2f2) to white, " +
-    "soft even softbox lighting, subtle floor reflection, 3/4 front angle, " +
-    "centered, full vehicle in frame, no people, no clutter, no text, no logos added. " +
-    "Photorealistic, high detail, sharp, color-accurate. Square 1:1. " +
-    "Keep the bike identical, do not alter model, colors, decals or proportions.",
-  redes:
-    "Cinematic hero shot of this exact motorcycle on a dark premium studio background " +
-    "(near-black #0b0b0c with subtle red rim light #E2231A), dramatic low-key lighting, " +
-    "moody reflections, slight haze, lots of negative space for text on the left. " +
-    "Keep the bike identical. Photorealistic, editorial, high-end automotive ad look. " +
-    "Vertical 4:5. Do not alter model, colors, decals or proportions.",
-};
+    `Place it on ${fondo}. Seamless gradient studio background, soft even softbox lighting, ` +
+    "subtle floor reflection, 3/4 front angle, centered, full vehicle in frame, " +
+    "no people, no clutter, no text, no logos added. Photorealistic, high detail, sharp, " +
+    "color-accurate. Square 1:1. Keep the bike identical, do not alter model, colors, " +
+    "decals or proportions."
+  );
+}
+
+const PROMPT_REDES =
+  "Cinematic hero shot of this exact motorcycle on a dark premium studio background " +
+  "(near-black #0b0b0c with subtle red rim light #E2231A), dramatic low-key lighting, " +
+  "moody reflections, slight haze, lots of negative space for text on the left. " +
+  "Keep the bike identical. Photorealistic, editorial, high-end automotive ad look. " +
+  "Vertical 4:5. Do not alter model, colors, decals or proportions.";
+
+const MARCAS_VALIDAS = Object.keys(FONDOS_MARCA) as Marca[];
 
 // Rate limit: máximo 20 llamadas por sesión al día (clave en memoria del proceso).
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -71,6 +81,7 @@ export async function POST(req: NextRequest) {
 
   const foto = formData.get("foto");
   const estilo = formData.get("estilo") as string | null;
+  const marca = (formData.get("marca") as string | null) ?? "Royal Enfield";
 
   if (!foto || !(foto instanceof File)) {
     return NextResponse.json({ error: "Falta la foto (File)" }, { status: 422 });
@@ -78,6 +89,12 @@ export async function POST(req: NextRequest) {
   if (!estilo || !["catalogo", "redes"].includes(estilo)) {
     return NextResponse.json(
       { error: "estilo debe ser 'catalogo' o 'redes'" },
+      { status: 422 },
+    );
+  }
+  if (estilo === "catalogo" && !MARCAS_VALIDAS.includes(marca as Marca)) {
+    return NextResponse.json(
+      { error: `marca inválida. Opciones: ${MARCAS_VALIDAS.join(", ")}` },
       { status: 422 },
     );
   }
@@ -134,7 +151,10 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "google/nano-banana-edit",
         input: {
-          prompt: PROMPTS[estilo],
+          prompt:
+            estilo === "catalogo"
+              ? promptCatalogo(marca as Marca)
+              : PROMPT_REDES,
           image_urls: [inputImageUrl],
         },
       }),
@@ -164,7 +184,7 @@ export async function POST(req: NextRequest) {
     task_id: taskId,
     estado: "procesando",
     input_url: inputImageUrl,
-    meta: { estilo, archivo: nombreArchivo },
+    meta: { estilo, marca, archivo: nombreArchivo },
   });
 
   return NextResponse.json({ taskId });
