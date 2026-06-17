@@ -269,6 +269,16 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] pt-[72px]">
+      {/* ── Volver al catálogo (salida visible arriba) ──────────────────────── */}
+      <div className="mx-auto max-w-5xl px-4 pt-6 md:px-8">
+        <Link
+          href="/#catalogo"
+          className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-muted transition-colors duration-200 hover:text-white"
+        >
+          ← Volver al catálogo
+        </Link>
+      </div>
+
       {/* ── Imagen principal ────────────────────────────────────────────────── */}
       <section
         aria-label={`Imagen de ${moto.marca} ${moto.modelo}`}

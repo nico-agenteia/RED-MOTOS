@@ -5,17 +5,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { linkWhatsApp, MENSAJE_WSP_GENERICO, NEGOCIO } from "@/lib/config";
 import MegaMenuMotos from "./MegaMenuMotos";
 
-/* Desktop: "Catálogo" se reemplaza por el botón del megamenú "Motos". */
+/* Desktop: "Catálogo" se reemplaza por el botón del megamenú "Motos".
+   Anclas con prefijo "/" para que funcionen desde cualquier ruta (incl.
+   /modelo/[slug]): navegan al home y hacen scroll a la sección. */
 const LINKS = [
-  { etiqueta: "Royal Enfield", href: "#royal-enfield" },
-  { etiqueta: "Suzuki", href: "#suzuki" },
-  { etiqueta: "Nosotros", href: "#nosotros" },
-  { etiqueta: "Financiamiento", href: "#financiamiento" },
-  { etiqueta: "Contacto", href: "#contacto" },
+  { etiqueta: "Royal Enfield", href: "/#royal-enfield" },
+  { etiqueta: "Suzuki", href: "/#suzuki" },
+  { etiqueta: "Nosotros", href: "/#nosotros" },
+  { etiqueta: "Financiamiento", href: "/#financiamiento" },
+  { etiqueta: "Contacto", href: "/#contacto" },
 ];
 
 /* Mobile (drawer): conserva "Catálogo" — el megamenú es solo desktop. */
-const LINKS_MOBILE = [{ etiqueta: "Catálogo", href: "#catalogo" }, ...LINKS];
+const LINKS_MOBILE = [{ etiqueta: "Catálogo", href: "/#catalogo" }, ...LINKS];
 
 export default function Nav() {
   const [conScroll, setConScroll] = useState(false);
@@ -40,11 +42,17 @@ export default function Nav() {
     };
   }, []);
 
-  // Bloquear scroll del body con el drawer abierto.
+  // Bloquear scroll del body con el drawer abierto + cerrar con Escape.
   useEffect(() => {
     document.body.style.overflow = drawerAbierto ? "hidden" : "";
+    if (!drawerAbierto) return;
+    const alTecla = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerAbierto(false);
+    };
+    window.addEventListener("keydown", alTecla);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", alTecla);
     };
   }, [drawerAbierto]);
 
@@ -63,9 +71,9 @@ export default function Nav() {
           conScroll ? "h-[56px]" : "h-[72px]"
         }`}
       >
-        {/* Logo */}
+        {/* Logo — siempre vuelve al inicio (también cierra la vista de detalle) */}
         <a
-          href="#"
+          href="/"
           aria-label={`${NEGOCIO.nombreLargo} — inicio`}
           className="flex items-center"
         >
@@ -188,6 +196,30 @@ export default function Nav() {
               aria-label="Menú móvil"
               className="fixed right-0 top-0 z-50 flex h-dvh w-[280px] flex-col gap-2 overflow-y-auto border-l border-line bg-surface px-6 pb-10 pt-24 lg:hidden"
             >
+              {/* Cerrar — el botón hamburguesa queda tapado por el panel, así
+                  que el drawer necesita su propia X visible y clickeable. */}
+              <button
+                type="button"
+                aria-label="Cerrar menú"
+                onClick={() => setDrawerAbierto(false)}
+                className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-md text-white/70 transition-colors duration-200 hover:bg-white/5 hover:text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+
               {LINKS_MOBILE.map((link, i) => (
                 <motion.a
                   key={link.href}
