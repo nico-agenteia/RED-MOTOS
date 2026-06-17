@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Link from "next/link";
 import { MOTOS_ROYAL_ENFIELD } from "@/lib/catalogo";
 import { formatCLP } from "@/lib/utils";
 import { linkWhatsApp } from "@/lib/config";
@@ -98,41 +99,49 @@ function CardRE({ moto, indice }: { moto: Moto; indice: number }) {
       }}
       className="group overflow-hidden rounded-xl border border-re-gold/25 bg-[#1A1208] transition-shadow duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
     >
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-b from-[#241a0c] to-[#1A1208]">
-        <img
-          src={moto.img}
-          alt={`Royal Enfield ${moto.modelo}`}
-          width={520}
-          height={390}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.04]"
-        />
-        {moto.precioBono !== null && (
-          <span className="absolute left-4 top-4 rounded-sm bg-re-red px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-re-cream">
-            Descuento
-          </span>
-        )}
-      </div>
-      <div className="p-6">
-        <h3 className="font-display text-2xl font-bold uppercase text-re-cream">
-          {moto.modelo}
-        </h3>
-        <div className="mt-3 flex items-baseline gap-3">
-          {moto.precioBono !== null ? (
-            <>
-              <span className="text-sm text-re-cream/50 line-through">
-                {formatCLP(moto.precioLista)}
-              </span>
-              <span className="font-display text-2xl font-extrabold text-re-gold">
-                {formatCLP(moto.precioBono)}
-              </span>
-            </>
-          ) : (
-            <span className="font-display text-2xl font-extrabold text-re-cream">
-              {formatCLP(moto.precioLista)}
+      <Link
+        href={`/modelo/${moto.id}`}
+        aria-label={`Ver ficha de Royal Enfield ${moto.modelo}`}
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-re-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1208]"
+      >
+        <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-b from-[#241a0c] to-[#1A1208]">
+          <img
+            src={moto.img}
+            alt={`Royal Enfield ${moto.modelo}`}
+            width={520}
+            height={390}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out-expo group-hover:scale-[1.04]"
+          />
+          {moto.precioBono !== null && (
+            <span className="absolute left-4 top-4 rounded-sm bg-re-red px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-re-cream">
+              Descuento
             </span>
           )}
         </div>
+        <div className="px-6 pt-6">
+          <h3 className="font-display text-2xl font-bold uppercase text-re-cream transition-colors duration-200 group-hover:text-re-gold">
+            {moto.modelo}
+          </h3>
+          <div className="mt-3 flex items-baseline gap-3">
+            {moto.precioBono !== null ? (
+              <>
+                <span className="text-sm text-re-cream/50 line-through">
+                  {formatCLP(moto.precioLista)}
+                </span>
+                <span className="font-display text-2xl font-extrabold text-re-gold">
+                  {formatCLP(moto.precioBono)}
+                </span>
+              </>
+            ) : (
+              <span className="font-display text-2xl font-extrabold text-re-cream">
+                {formatCLP(moto.precioLista)}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+      <div className="px-6 pb-6 pt-5">
         <motion.a
           href={linkWhatsApp(
             `Hola! Vengo de la web de Red Motos. Quiero cotizar la Royal Enfield ${moto.modelo}. ¿Me pueden atender?`,
@@ -141,7 +150,7 @@ function CardRE({ moto, indice }: { moto: Moto; indice: number }) {
           rel="noopener noreferrer"
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-md border border-re-cream/50 text-sm font-semibold text-re-cream transition-colors duration-200 hover:border-re-cream hover:bg-re-cream/10"
+          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md border border-re-cream/50 text-sm font-semibold text-re-cream transition-colors duration-200 hover:border-re-cream hover:bg-re-cream/10"
           aria-label={`Cotizar Royal Enfield ${moto.modelo} por WhatsApp`}
         >
           Cotizar
@@ -218,7 +227,7 @@ export default function SalaRoyalEnfield() {
               Pure Motorcycling
             </h2>
             <p className="mt-4 max-w-lg text-lg text-re-cream/70">
-              Tradición y carácter desde 1901. Sentí la diferencia.
+              Tradición y carácter desde 1901. Siente la diferencia.
             </p>
           </div>
         </div>

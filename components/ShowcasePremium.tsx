@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { gsap, ScrollTrigger, prefiereMenosMovimiento } from "@/lib/gsap-setup";
 import { linkWhatsApp } from "@/lib/config";
@@ -10,6 +11,8 @@ import { linkWhatsApp } from "@/lib/config";
 type Spec = { valor: string; unidad: string; label: string };
 type Modelo = {
   id: string;
+  /** id real en CATALOGO para enlazar a /modelo/[slug]. */
+  slug: string;
   marca: string;
   nombre: string;
   familia: string;
@@ -27,6 +30,7 @@ type Modelo = {
 const MODELOS: Modelo[] = [
   {
     id: "gsx-r1000r",
+    slug: "sz-gsx-r1000r",
     marca: "Suzuki",
     nombre: "GSX-R1000R",
     familia: "RACING LINE",
@@ -43,6 +47,7 @@ const MODELOS: Modelo[] = [
   },
   {
     id: "classic-650-chrome",
+    slug: "re-classic-650-chrome",
     marca: "Royal Enfield",
     nombre: "Classic 650",
     familia: "CHROME EDITION",
@@ -59,6 +64,7 @@ const MODELOS: Modelo[] = [
   },
   {
     id: "cyclone-ra2",
+    slug: "cy-ra2",
     marca: "Cyclone",
     nombre: "RA2",
     familia: "NAKED LINE",
@@ -75,6 +81,7 @@ const MODELOS: Modelo[] = [
   },
   {
     id: "zonsen-rx3",
+    slug: "zs-rx3",
     marca: "Zonsen",
     nombre: "RX3",
     familia: "ADVENTURE LINE",
@@ -91,6 +98,7 @@ const MODELOS: Modelo[] = [
   },
   {
     id: "kymco-xtown-300",
+    slug: "ky-xtown-300",
     marca: "Kymco",
     nombre: "X-Town 300",
     familia: "URBAN LINE",
@@ -218,13 +226,19 @@ function PanelModelo({
         {modelo.marca}
       </span>
 
-      {/* Nombre */}
-      <h2
-        className="headline-display mt-3 leading-[0.85] text-white"
-        style={{ fontSize: "clamp(56px, 9vw, 132px)" }}
+      {/* Nombre — enlaza a la ficha del modelo */}
+      <Link
+        href={`/modelo/${modelo.slug}`}
+        aria-label={`Ver ficha de ${modelo.marca} ${modelo.nombre}`}
+        className="group/nombre mt-3 inline-block focus:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-8"
       >
-        {modelo.nombre}
-      </h2>
+        <h2
+          className="headline-display leading-[0.85] text-white transition-colors duration-200 group-hover/nombre:text-white/75"
+          style={{ fontSize: "clamp(56px, 9vw, 132px)" }}
+        >
+          {modelo.nombre}
+        </h2>
+      </Link>
 
       {/* Hermanos fantasma — solo donde hay espacio (desktop) */}
       {mostrarHermanos && (
@@ -271,6 +285,12 @@ function PanelModelo({
         >
           Cotizar {modelo.nombre}
         </a>
+        <Link
+          href={`/modelo/${modelo.slug}`}
+          className="font-mono text-[12px] uppercase tracking-[0.15em] text-white/55 underline-offset-4 transition-colors duration-200 hover:text-white hover:underline"
+        >
+          Ver ficha completa →
+        </Link>
       </div>
     </div>
   );
@@ -407,8 +427,12 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
 
         {/* Layout principal: moto izquierda / texto derecha */}
         <div className="mx-auto flex h-full max-w-7xl items-center gap-8 px-12 md:grid md:grid-cols-[1.15fr_0.85fr] md:gap-4">
-          {/* Moto — crossfade con AnimatePresence */}
-          <div className="flex w-full items-center justify-start">
+          {/* Moto — crossfade con AnimatePresence; enlaza a la ficha del modelo */}
+          <Link
+            href={`/modelo/${modelo.slug}`}
+            aria-label={`Ver ficha de ${modelo.marca} ${modelo.nombre}`}
+            className="flex w-full cursor-pointer items-center justify-start focus:outline-none"
+          >
             <AnimatePresence mode="wait">
               <motion.img
                 key={`moto-${modelo.id}`}
@@ -426,7 +450,7 @@ function ShowcaseDesktop({ reducida }: { reducida: boolean }) {
                 }}
               />
             </AnimatePresence>
-          </div>
+          </Link>
 
           {/* Panel de texto — swap con AnimatePresence */}
           <AnimatePresence mode="wait">
