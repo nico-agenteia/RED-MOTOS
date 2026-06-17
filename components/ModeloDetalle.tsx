@@ -1,18 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
-import Viewer360 from "@/components/Viewer360";
+import { motion } from "framer-motion";
 import { CATALOGO } from "@/lib/catalogo";
 import { formatCLP } from "@/lib/utils";
 import { linkWhatsApp } from "@/lib/config";
 import { FICHAS, type FichaTecnica } from "@/lib/fichas";
 import type { Moto } from "@/lib/tipos";
-
-// ─── Constantes ──────────────────────────────────────────────────────────────
-const PASO = 1 / 24; // un click de botón = 1/24 de vuelta
-const PROGRESO_REDUCIDO = 0.35;
 
 function mensajeCotizacion(moto: Moto): string {
   return `Hola! Vengo de la web de Red Motos. Me interesa la ${moto.marca} ${moto.modelo}. ¿Me pueden dar información y cotización?`;
@@ -196,7 +191,7 @@ const staggerTight = {
 // ─── Grupo de ficha (card con filas etiqueta/valor) ──────────────────────────
 type GrupoFicha = {
   titulo: string;
-  icono: React.ReactNode;
+  icono: ReactNode;
   filas: Array<[string, string | undefined]>;
 };
 
@@ -264,118 +259,8 @@ function buildGrupos(f: FichaTecnica): GrupoFicha[] {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function ModeloDetalle({ moto }: { moto: Moto }) {
-  const prefersReducedMotion = useReducedMotion();
   const ficha = FICHAS[moto.id];
   const grupos = ficha ? buildGrupos(ficha) : [];
-
-  // Progreso del visor 360 (0..1)
-  const [progreso, setProgreso] = useState(
-    prefersReducedMotion ? PROGRESO_REDUCIDO : 0,
-  );
-
-  const visorRef = useRef<HTMLDivElement>(null);
-  const arrastreRef = useRef<{ activo: boolean; lastX: number }>({
-    activo: false,
-    lastX: 0,
-  });
-  // acumulador en "px" antes de convertir a progreso
-  const acumuladoRef = useRef(0);
-
-  // Ancho del contenedor visor para normalizar deltas
-  const getAncho = useCallback(() => {
-    return visorRef.current?.offsetWidth ?? 480;
-  }, []);
-
-  // Avanza/retrocede progreso con wrap en 0..1
-  const moverProgreso = useCallback(
-    (deltaX: number) => {
-      if (prefersReducedMotion) return;
-      acumuladoRef.current += deltaX;
-      const ancho = getAncho();
-      // Una vuelta completa = 1 ancho del visor
-      const delta = acumuladoRef.current / ancho;
-      if (Math.abs(delta) >= 1 / 48) {
-        setProgreso((prev) => {
-          let siguiente = prev - delta; // restar: arrastrar derecha = gira hacia adelante
-          siguiente = ((siguiente % 1) + 1) % 1; // wrap modular
-          return siguiente;
-        });
-        acumuladoRef.current = 0;
-      }
-    },
-    [prefersReducedMotion, getAncho],
-  );
-
-  // ── Mouse drag ────────────────────────────────────────────────────────────
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (prefersReducedMotion) return;
-    arrastreRef.current = { activo: true, lastX: e.clientX };
-    acumuladoRef.current = 0;
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!arrastreRef.current.activo) return;
-      const delta = e.clientX - arrastreRef.current.lastX;
-      arrastreRef.current.lastX = e.clientX;
-      moverProgreso(delta);
-    };
-
-    const onMouseUp = () => {
-      arrastreRef.current.activo = false;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [prefersReducedMotion, moverProgreso]);
-
-  // ── Touch drag ────────────────────────────────────────────────────────────
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (prefersReducedMotion) return;
-    arrastreRef.current = { activo: true, lastX: e.touches[0].clientX };
-    acumuladoRef.current = 0;
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    const el = visorRef.current;
-    if (!el) return;
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!arrastreRef.current.activo) return;
-      e.preventDefault(); // evita scroll al girar
-      const delta = e.touches[0].clientX - arrastreRef.current.lastX;
-      arrastreRef.current.lastX = e.touches[0].clientX;
-      moverProgreso(delta);
-    };
-
-    const onTouchEnd = () => {
-      arrastreRef.current.activo = false;
-    };
-
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd);
-    return () => {
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [prefersReducedMotion, moverProgreso]);
-
-  // ── Botones ‹ › ──────────────────────────────────────────────────────────
-  const girarAntes = () => {
-    if (prefersReducedMotion) return;
-    setProgreso((prev) => ((prev - PASO) % 1 + 1) % 1);
-  };
-  const girarDespues = () => {
-    if (prefersReducedMotion) return;
-    setProgreso((prev) => (prev + PASO) % 1);
-  };
 
   // ── Hermanos de misma marca ───────────────────────────────────────────────
   const hermanos = CATALOGO.filter(
@@ -384,66 +269,27 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
 
   return (
     <main className="min-h-screen bg-[#0A0A0A] pt-[72px]">
-      {/* ── Sección visor 360 ───────────────────────────────────────────────── */}
+      {/* ── Imagen principal ────────────────────────────────────────────────── */}
       <section
-        aria-label={`Vista 360 de ${moto.marca} ${moto.modelo}`}
+        aria-label={`Imagen de ${moto.marca} ${moto.modelo}`}
         className="relative bg-[#0A0A0A] py-12"
       >
-        <div className="mx-auto max-w-4xl px-4 md:px-8">
-          {/* Visor con drag */}
-          <div
-            ref={visorRef}
-            onMouseDown={onMouseDown}
-            onTouchStart={onTouchStart}
-            className={`relative select-none rounded-2xl overflow-hidden bg-[hsl(0,0%,6%)] border border-line ${
-              prefersReducedMotion ? "" : "cursor-grab active:cursor-grabbing"
-            }`}
-            style={{ aspectRatio: "16/9" }}
-            aria-label={prefersReducedMotion ? undefined : "Arrastra para girar la moto"}
-          >
-            <Viewer360
-              slug={moto.id}
-              fallbackImg={moto.img}
+        <div className="mx-auto max-w-5xl px-4 md:px-8">
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-[hsl(0,0%,6%)] p-4 md:p-8">
+            <img
+              src={moto.img}
               alt={`${moto.marca} ${moto.modelo}`}
-              progreso={prefersReducedMotion ? PROGRESO_REDUCIDO : progreso}
-              className="h-full w-full"
+              width={1280}
+              height={960}
+              className="mx-auto h-auto w-full object-contain"
             />
 
-            {/* Hint de arrastre — oculto en reduced-motion */}
-            {!prefersReducedMotion && (
-              <p
-                aria-hidden="true"
-                className="label-mono absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-line bg-black/60 px-4 py-1.5 text-[11px] backdrop-blur-sm"
-              >
-                Arrastra para girar
-              </p>
+            {moto.precioBono !== null && (
+              <span className="absolute left-5 top-5 rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
+                Descuento
+              </span>
             )}
           </div>
-
-          {/* Botones ‹ › */}
-          {!prefersReducedMotion && (
-            <div className="mt-4 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={girarAntes}
-                aria-label="Girar vista anterior"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5 active:scale-95"
-              >
-                ‹
-              </button>
-              <span className="label-mono text-[11px] text-muted">
-                {Math.round(progreso * 360)}°
-              </span>
-              <button
-                type="button"
-                onClick={girarDespues}
-                aria-label="Girar vista siguiente"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-white transition-colors duration-200 hover:border-white/40 hover:bg-white/5 active:scale-95"
-              >
-                ›
-              </button>
-            </div>
-          )}
         </div>
       </section>
 
