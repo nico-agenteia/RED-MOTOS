@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { formatCLP } from "@/lib/utils";
 import type { SolicitudAutofin } from "@/lib/tipos";
 
-// Color del badge según el resultado del evaluador automático de Autofin.
 function claseEstado(estado: string | null): string {
   const e = (estado ?? "").toLowerCase();
   if (e.includes("aprob")) return "bg-green-600 text-white";
@@ -77,16 +76,15 @@ export default function BandejaSolicitudes() {
 
   return (
     <div>
-      <h2 className="font-display text-3xl font-bold uppercase text-white">
-        Solicitudes de Financiamiento
+      <h2 className="font-display text-2xl font-bold uppercase text-white md:text-3xl">
+        Solicitudes
       </h2>
       <p className="mt-1 max-w-lg text-sm text-muted">
-        Solicitudes enviadas a Autofin desde el simulador, con el resultado de la
-        evaluación automática de riesgo.
+        Solicitudes de financiamiento enviadas a Autofin.
       </p>
 
-      {/* Métricas rápidas */}
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* Métricas */}
+      <div className="mt-4 grid grid-cols-2 gap-3 md:mt-6 md:grid-cols-4 md:gap-4">
         {[
           { etiqueta: "Total", valor: total },
           { etiqueta: "Aprobadas", valor: aprobadas },
@@ -95,10 +93,12 @@ export default function BandejaSolicitudes() {
         ].map((m) => (
           <div
             key={m.etiqueta}
-            className="rounded-xl border border-line bg-surface-2 p-4"
+            className="rounded-xl border border-line bg-surface-2 p-3 md:p-4"
           >
-            <p className="label-mono !text-[11px]">{m.etiqueta}</p>
-            <p className="font-display mt-1 text-3xl font-bold text-white">
+            <p className="label-mono !text-[10px] md:!text-[11px]">
+              {m.etiqueta}
+            </p>
+            <p className="font-display mt-1 text-2xl font-bold text-white md:text-3xl">
               {m.valor}
             </p>
           </div>
@@ -106,13 +106,13 @@ export default function BandejaSolicitudes() {
       </div>
 
       {/* Filtros */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-2 md:mt-6 md:gap-3">
         {FILTROS.map((f) => (
           <button
             key={f}
             type="button"
             onClick={() => setFiltro(f)}
-            className={`min-h-[36px] rounded-full border px-4 text-xs font-medium transition-colors duration-200 ${
+            className={`min-h-[36px] rounded-full border px-3 text-xs font-medium transition-colors duration-200 md:px-4 ${
               filtro === f
                 ? "border-red-500 bg-red-500 text-white"
                 : "border-line text-muted hover:text-white"
@@ -123,8 +123,8 @@ export default function BandejaSolicitudes() {
         ))}
       </div>
 
-      {/* Tabla */}
-      <div className="mt-6 overflow-x-auto rounded-xl border border-line">
+      {/* ── Tabla desktop ──────────────────────────────────────────── */}
+      <div className="mt-6 hidden overflow-x-auto rounded-xl border border-line md:block">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-surface-2">
@@ -154,8 +154,7 @@ export default function BandejaSolicitudes() {
             ) : solicitudes.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-muted">
-                  Aún no hay solicitudes. Aparecerán aquí cuando Autofin notifique
-                  el resultado de una evaluación.
+                  Aún no hay solicitudes.
                 </td>
               </tr>
             ) : (
@@ -244,6 +243,96 @@ export default function BandejaSolicitudes() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Cards mobile ───────────────────────────────────────────── */}
+      <div className="mt-4 flex flex-col gap-3 md:hidden">
+        {cargando ? (
+          <p className="py-12 text-center text-muted">Cargando…</p>
+        ) : solicitudes.length === 0 ? (
+          <p className="py-12 text-center text-muted">
+            Aún no hay solicitudes.
+          </p>
+        ) : (
+          solicitudes.map((s) => (
+            <div
+              key={s.id}
+              className={`rounded-xl border border-line bg-surface-2 p-4 ${
+                s.atendido ? "opacity-50" : ""
+              }`}
+            >
+              {/* Estado + fecha */}
+              <div className="flex items-center justify-between">
+                <span
+                  className={`rounded-sm px-2 py-1 text-[11px] font-semibold ${claseEstado(
+                    s.estadoEvaluacion,
+                  )}`}
+                >
+                  {s.estadoEvaluacion ?? "Pendiente"}
+                </span>
+                <span className="font-mono text-[10px] text-muted">
+                  {fechaCorta(s.creadoEn)}
+                </span>
+              </div>
+
+              {/* Cliente */}
+              <p className="mt-2 font-medium text-white">
+                {s.nombre ?? "Sin nombre"}
+              </p>
+              {s.rut && (
+                <p className="font-mono text-xs text-muted">{s.rut}</p>
+              )}
+
+              {/* Moto + cuota */}
+              <div className="mt-2 space-y-1 text-xs text-muted">
+                {(s.marca || s.modelo) && (
+                  <p className="text-white/80">
+                    {[s.marca, s.modelo].filter(Boolean).join(" ")}
+                    {s.precio ? ` · ${formatCLP(s.precio)}` : ""}
+                  </p>
+                )}
+                {s.valorCuota && (
+                  <p className="font-mono">
+                    Cuota: {formatCLP(s.valorCuota)}
+                    {s.plazo ? ` · ${s.plazo} cuotas` : ""}
+                    {s.cae ? ` · CAE ${s.cae}%` : ""}
+                  </p>
+                )}
+                {s.telefono && (
+                  <p className="font-mono text-white/70">{s.telefono}</p>
+                )}
+                {s.email && <p>{s.email}</p>}
+                {s.idTrinidad && (
+                  <p className="font-mono">Trinidad: {s.idTrinidad}</p>
+                )}
+              </div>
+
+              {/* Acciones */}
+              <div className="mt-3 flex gap-2">
+                {linkWsp(s.telefono) && (
+                  <motion.a
+                    href={linkWsp(s.telefono)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileTap={{ scale: 0.96 }}
+                    className="inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-md bg-green-600 text-sm font-semibold text-white hover:bg-green-700"
+                  >
+                    <span aria-hidden="true">💬</span> WhatsApp
+                  </motion.a>
+                )}
+                {!s.atendido && (
+                  <button
+                    type="button"
+                    onClick={() => void marcarAtendida(s.id)}
+                    className="inline-flex min-h-[40px] flex-1 items-center justify-center rounded-md border border-line text-sm text-muted transition-colors hover:text-white"
+                  >
+                    ✓ Atendido
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
