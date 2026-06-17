@@ -24,12 +24,15 @@ function promptCatalogo(marca: Marca): string {
   );
 }
 
+// El estilo "Redes" se compone luego con la plantilla de Instagram (next/og),
+// por eso la moto debe quedar centrada con espacio oscuro arriba y abajo.
 const PROMPT_REDES =
-  "Cinematic hero shot of this exact motorcycle on a dark premium studio background " +
-  "(near-black #0b0b0c with subtle red rim light #E2231A), dramatic low-key lighting, " +
-  "moody reflections, slight haze, lots of negative space for text on the left. " +
-  "Keep the bike identical. Photorealistic, editorial, high-end automotive ad look. " +
-  "Vertical 4:5. Do not alter model, colors, decals or proportions.";
+  "Eye-catching cinematic square 1:1 image of this exact motorcycle. " +
+  "Dramatic high-contrast DARK scene with a strong accent glow and rim light so the motorcycle " +
+  "clearly stands out. The bike is the hero, fully visible and centered in the MIDDLE of the frame, " +
+  "with empty dark space at the TOP and BOTTOM (reserved for overlays). " +
+  "No text, no watermarks, no logos. Photorealistic, editorial, premium automotive ad look. " +
+  "Keep the bike identical, do not alter model, colors, decals or proportions.";
 
 const MARCAS_VALIDAS = Object.keys(FONDOS_MARCA) as Marca[];
 

@@ -43,6 +43,28 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
     setPreviewUrl(URL.createObjectURL(file));
   }
 
+  async function descargar() {
+    if (!resultadoUrl) return;
+    const nombre =
+      estilo === "redes" ? "red-motos-post.webp" : "red-motos-catalogo.webp";
+    try {
+      // Descarga vía blob: fuerza el guardado aunque la URL sea de otro origen
+      // (Supabase Storage), donde el atributo `download` no basta.
+      const res = await fetch(resultadoUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(resultadoUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
   async function procesar() {
     if (!archivo) return;
     setError(null);
@@ -264,13 +286,24 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
                 height={520}
                 className="aspect-square w-full rounded-lg bg-black object-contain p-2"
               />
-              <button
-                type="button"
-                onClick={() => onGuardarEnCatalogo?.(resultadoUrl!)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-500 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
-              >
-                Guardar al catálogo
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={descargar}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-500 px-5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+                >
+                  ↓ Descargar imagen
+                </button>
+                {estilo === "catalogo" && onGuardarEnCatalogo && (
+                  <button
+                    type="button"
+                    onClick={() => onGuardarEnCatalogo(resultadoUrl!)}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-line px-5 text-sm font-medium text-muted transition-colors duration-200 hover:border-white/25 hover:text-white"
+                  >
+                    Guardar al catálogo
+                  </button>
+                )}
+              </div>
             </div>
           ) : previewUrl ? (
             <img

@@ -95,7 +95,10 @@ export async function GET(req: NextRequest) {
       tarea = data;
     } catch { /* continuar sin datos de tarea */ }
 
-    const esPost = tarea?.tipo === "post";
+    // Se aplica la plantilla de Instagram tanto al Generador de posts ("post")
+    // como al estilo "Redes" del Estudio de fotos ("foto-redes").
+    const aplicarPlantilla =
+      tarea?.tipo === "post" || tarea?.tipo === "foto-redes";
     const meta = tarea?.meta as Record<string, unknown> | null | undefined;
     const caption = meta?.caption as string | undefined;
 
@@ -117,7 +120,7 @@ export async function GET(req: NextRequest) {
     let extensionSalida = "png";
     let contentTypeSalida = "image/png";
 
-    if (esPost) {
+    if (aplicarPlantilla) {
       try {
         const sharp = (await import("sharp")).default;
         const origin = req.nextUrl.origin;
@@ -201,7 +204,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Subir al bucket correcto según tipo de tarea
-    const bucket = esPost ? "posts" : "catalogo";
+    const bucket = aplicarPlantilla ? "posts" : "catalogo";
     const nombreArchivo = `ia-${taskId}.${extensionSalida}`;
     const { error: uploadError } = await sb.storage
       .from(bucket)
