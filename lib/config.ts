@@ -11,6 +11,9 @@ export const NEGOCIO = {
   whatsappRaw: "56974533616",
   instagram: "@redmotoschile",
   instagramUrl: "https://www.instagram.com/redmotoschile",
+  facebookUrl: "https://www.facebook.com/redmotoschile",
+  tiktok: "@redmotoschile",
+  tiktokUrl: "https://www.tiktok.com/@redmotoschile",
   web: "https://www.redmotos.cl",
 } as const;
 
