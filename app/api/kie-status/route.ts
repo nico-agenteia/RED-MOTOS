@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
 import { renderPostInstagram } from "@/lib/post-instagram";
@@ -120,34 +122,25 @@ export async function GET(req: NextRequest) {
     if (aplicarPlantilla) {
       try {
         const sharp = (await import("sharp")).default;
-        const origin = req.nextUrl.origin;
+        const publicDir = join(process.cwd(), "public");
 
-        // Descarga una imagen y la devuelve como data-URI PNG (Satori no
-        // decodifica WebP con fiabilidad). null si no existe el archivo.
-        const aPngDataUri = async (url: string): Promise<string | null> => {
-          try {
-            const r = await fetch(url);
-            if (!r.ok) return null;
-            const b = Buffer.from(await r.arrayBuffer());
-            const png = await sharp(b).png().toBuffer();
-            return `data:image/png;base64,${png.toString("base64")}`;
-          } catch {
-            return null;
-          }
+        const fileToPngDataUri = async (filePath: string): Promise<string | null> => {
+          if (!existsSync(filePath)) return null;
+          const buf = readFileSync(filePath);
+          const png = await sharp(buf).png().toBuffer();
+          return `data:image/png;base64,${png.toString("base64")}`;
         };
 
-        // Moto cuadrada como fondo del post.
         const motoPng = await sharp(imagenBuffer)
           .resize(1080, 1080, { fit: "cover", position: "centre" })
           .png()
           .toBuffer();
         const motoDataUri = `data:image/png;base64,${motoPng.toString("base64")}`;
 
-        const logoDataUri = await aPngDataUri(
-          `${origin}/logos/red-motos-logo.webp`,
+        const logoDataUri = await fileToPngDataUri(
+          join(publicDir, "logos", "red-motos-logo.webp"),
         );
 
-        // Las 5 marcas del catálogo; las que aún no tienen logo se omiten solas.
         const archivosMarca = [
           "logo-royal-enfield",
           "logo-suzuki",
@@ -157,14 +150,15 @@ export async function GET(req: NextRequest) {
         ];
         const marcaLogos: string[] = [];
         for (const f of archivosMarca) {
-          const uri = await aPngDataUri(`${origin}/logos/${f}.webp`);
+          const uri = await fileToPngDataUri(join(publicDir, "logos", `${f}.webp`));
           if (uri) marcaLogos.push(uri);
         }
 
-        const [fontBold, fontMedium] = await Promise.all([
-          fetch(`${origin}/fonts/Oswald-700.ttf`).then((r) => r.arrayBuffer()),
-          fetch(`${origin}/fonts/Oswald-500.ttf`).then((r) => r.arrayBuffer()),
-        ]);
+        const fontBoldBuf = readFileSync(join(publicDir, "fonts", "Oswald-700.ttf"));
+        const fontMediumBuf = readFileSync(join(publicDir, "fonts", "Oswald-500.ttf"));
+        const fontBold = fontBoldBuf.buffer.slice(fontBoldBuf.byteOffset, fontBoldBuf.byteOffset + fontBoldBuf.byteLength);
+        const fontMedium = fontMediumBuf.buffer.slice(fontMediumBuf.byteOffset, fontMediumBuf.byteOffset + fontMediumBuf.byteLength);
+
         const svg = await renderPostInstagram({
           motoDataUri,
           logoDataUri,
@@ -177,7 +171,6 @@ export async function GET(req: NextRequest) {
         contentTypeSalida = "image/webp";
       } catch (err) {
         console.error("[kie-status] No se pudo componer el post:", err);
-        // Fallback: al menos entregar la moto cuadrada en WebP.
         try {
           const sharp = (await import("sharp")).default;
           imagenBuffer = await sharp(imagenBuffer)
