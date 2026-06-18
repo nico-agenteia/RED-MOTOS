@@ -6,16 +6,12 @@ import gsap from "gsap";
 import { cuotaFrancesa, formatCLP } from "@/lib/utils";
 import { linkWhatsApp, TASA_MENSUAL_REFERENCIAL } from "@/lib/config";
 import type { OpcionesMoto, ResultadoCuota } from "@/lib/autofin";
+import type { Moto } from "@/lib/tipos";
 import ModalSolicitud from "@/components/ModalSolicitud";
 
-// Valores de respaldo: se usan mientras carga la config o si Autofin no responde
-// (modo referencial con cálculo local de cuota francesa).
 const PLAZOS_FALLBACK = [12, 18, 24, 36, 48];
-const VALOR_MIN_FB = 500_000;
-const VALOR_MAX_FB = 20_000_000;
 const PIE_MIN_FB = 0;
 const PIE_MAX_FB = 50;
-const VALOR_STEP = 100_000;
 const PIE_STEP_PCT = 5;
 
 type EstadoCuota = "idle" | "cargando" | "ok" | "error";
@@ -25,7 +21,8 @@ const formatPct = (n: number) =>
 
 export default function SimuladorCuotas() {
   const [opciones, setOpciones] = useState<OpcionesMoto | null>(null);
-  const [valor, setValor] = useState(3_500_000);
+  const [motos, setMotos] = useState<Moto[]>([]);
+  const [motoId, setMotoId] = useState<string>("");
   const [piePct, setPiePct] = useState(20);
   const [plazo, setPlazo] = useState(24);
   const [cuotaReal, setCuotaReal] = useState<ResultadoCuota | null>(null);
@@ -36,25 +33,41 @@ export default function SimuladorCuotas() {
   const cuotaRef = useRef<HTMLSpanElement>(null);
   const cuotaAnimada = useRef({ val: 0 });
 
-  // Rangos efectivos: reales (Autofin) o de respaldo.
   const plazos = opciones?.plazos.length ? opciones.plazos : PLAZOS_FALLBACK;
-  const valorMin = opciones?.precioMin ?? VALOR_MIN_FB;
-  const valorMax = opciones?.precioMax ?? VALOR_MAX_FB;
   const pieMin = opciones?.pieMinPct ?? PIE_MIN_FB;
   const pieMax = opciones?.pieMaxPct ?? PIE_MAX_FB;
+
+  const motoSeleccionada = motos.find((m) => m.id === motoId) ?? null;
+  const valor = motoSeleccionada
+    ? (motoSeleccionada.precioBono ?? motoSeleccionada.precioLista)
+    : 0;
 
   const pie = useMemo(() => Math.round((valor * piePct) / 100), [valor, piePct]);
   const capital = valor - pie;
   const cuotaLocal = useMemo(
-    () => cuotaFrancesa(capital, TASA_MENSUAL_REFERENCIAL, plazo),
+    () => (capital > 0 ? cuotaFrancesa(capital, TASA_MENSUAL_REFERENCIAL, plazo) : 0),
     [capital, plazo],
   );
 
-  // Mostramos la cuota real cuando la tenemos y no hubo error; si no, la local.
   const real = cuotaReal !== null && estado !== "error";
   const cuotaNum = real ? cuotaReal!.valorCuota : cuotaLocal;
 
-  // 1) Cargar opciones reales desde Autofin (una vez) y encuadrar el estado.
+  // 1) Cargar motos del catálogo.
+  useEffect(() => {
+    fetch("/api/motos")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("motos"))))
+      .then((d) => {
+        const lista: Moto[] = d.motos ?? [];
+        lista.sort((a, b) => {
+          const cmp = a.marca.localeCompare(b.marca);
+          return cmp !== 0 ? cmp : a.modelo.localeCompare(b.modelo);
+        });
+        setMotos(lista);
+      })
+      .catch(() => setMotos([]));
+  }, []);
+
+  // 2) Cargar opciones Autofin.
   useEffect(() => {
     let activo = true;
     fetch("/api/autofin/config")
@@ -62,7 +75,6 @@ export default function SimuladorCuotas() {
       .then((o: OpcionesMoto) => {
         if (!activo) return;
         setOpciones(o);
-        setValor((v) => Math.min(Math.max(v, o.precioMin), o.precioMax));
         setPiePct((p) => Math.min(Math.max(p, o.pieMinPct), o.pieMaxPct));
         setPlazo((pl) =>
           o.plazos.includes(pl)
@@ -75,17 +87,14 @@ export default function SimuladorCuotas() {
       .catch(() => {
         if (activo) setOpciones(null);
       });
-    return () => {
-      activo = false;
-    };
+    return () => { activo = false; };
   }, []);
 
-  // 2) Pedir la cuota real a Autofin (con debounce para no spamear al deslizar).
+  // 3) Cuota real (Autofin).
   useEffect(() => {
-    if (!opciones) return; // modo fallback: sin llamadas a Autofin
-    if (capital <= 0) {
+    if (!opciones || !motoSeleccionada || capital <= 0) {
       setCuotaReal(null);
-      setEstado("error");
+      if (motoSeleccionada && capital <= 0) setEstado("error");
       return;
     }
     setEstado("cargando");
@@ -96,65 +105,54 @@ export default function SimuladorCuotas() {
         body: JSON.stringify({ precio: valor, montoPie: pie, plazo }),
       })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error("cuota"))))
-        .then((d: ResultadoCuota) => {
-          setCuotaReal(d);
-          setEstado("ok");
-        })
-        .catch(() => {
-          setCuotaReal(null);
-          setEstado("error");
-        });
+        .then((d: ResultadoCuota) => { setCuotaReal(d); setEstado("ok"); })
+        .catch(() => { setCuotaReal(null); setEstado("error"); });
     }, 450);
     return () => clearTimeout(id);
-  }, [opciones, valor, pie, plazo, capital]);
+  }, [opciones, motoSeleccionada, valor, pie, plazo, capital]);
 
-  // Count-up animado de la cuota (GSAP) cada vez que cambia el monto mostrado.
+  // Count-up animado.
   useEffect(() => {
     const span = cuotaRef.current;
     if (!span) return;
-
-    const reducirMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    if (reducirMotion) {
+    const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducir) {
       span.textContent = formatCLP(cuotaNum);
       cuotaAnimada.current.val = cuotaNum;
       return;
     }
-
     const tween = gsap.to(cuotaAnimada.current, {
       val: cuotaNum,
       duration: 0.5,
       ease: "power3.out",
-      onUpdate: () => {
-        span.textContent = formatCLP(cuotaAnimada.current.val);
-      },
+      onUpdate: () => { span.textContent = formatCLP(cuotaAnimada.current.val); },
     });
-    return () => {
-      tween.kill();
-    };
+    return () => { tween.kill(); };
   }, [cuotaNum]);
 
-  const alCambiarValor = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setValor(Number(e.target.value)),
-    [],
-  );
   const alCambiarPie = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setPiePct(Number(e.target.value)),
     [],
   );
 
-  const fillValor = ((valor - valorMin) / (valorMax - valorMin)) * 100;
   const fillPie = pieMax > pieMin ? ((piePct - pieMin) / (pieMax - pieMin)) * 100 : 0;
 
-  const mensajeWsp = `Hola! Simulé un financiamiento en la web de Red Motos: moto de ${formatCLP(valor)}, pie de ${formatCLP(pie)} (${piePct}%), ${plazo} cuotas de ${formatCLP(cuotaNum)}${real ? ` (CAE ${formatPct(cuotaReal!.cae)}%)` : ""}. ¿Me pueden ayudar a concretarlo?`;
+  const nombreMoto = motoSeleccionada
+    ? `${motoSeleccionada.marca} ${motoSeleccionada.modelo}`
+    : "";
+
+  const mensajeWsp = motoSeleccionada
+    ? `Hola! Simulé un financiamiento en la web de Red Motos para la ${nombreMoto} (${formatCLP(valor)}): pie de ${formatCLP(pie)} (${piePct}%), ${plazo} cuotas de ${formatCLP(cuotaNum)}${real ? ` (CAE ${formatPct(cuotaReal!.cae)}%)` : ""}. ¿Me pueden ayudar a concretarlo?`
+    : "";
 
   const payloadLead = (via: "iframe" | "whatsapp") => ({
     origen: "simulador" as const,
+    nombre: nombreMoto || undefined,
     presupuesto: formatCLP(valor),
     score: "warm" as const,
     payload: {
+      motoId: motoSeleccionada?.id,
+      moto: nombreMoto,
       valor,
       pie,
       piePct,
@@ -167,7 +165,6 @@ export default function SimuladorCuotas() {
     },
   });
 
-  // Captura de lead al usar el CTA de WhatsApp (fire-and-forget).
   const registrarLeadWsp = () => {
     void fetch("/api/leads", {
       method: "POST",
@@ -176,8 +173,6 @@ export default function SimuladorCuotas() {
     }).catch(() => {});
   };
 
-  // "Solicitar financiamiento": registra el lead, obtiene su id y abre el iFrame
-  // de Araña prellenado con el precio + idExterno = leadId (cruce con el webhook).
   const abrirSolicitud = async () => {
     if (!opciones || cargandoSolicitud) return;
     setCargandoSolicitud(true);
@@ -189,9 +184,7 @@ export default function SimuladorCuotas() {
         body: JSON.stringify(payloadLead("iframe")),
       });
       if (r.ok) leadId = (await r.json())?.leadId ?? "";
-    } catch {
-      // sin leadId igual abrimos el iFrame; solo perdemos el cruce automático
-    }
+    } catch { /* sin leadId igual abrimos */ }
 
     const { spiderUrl, codSpider, brand, model, year } = opciones.iframe;
     const params = new URLSearchParams({
@@ -207,6 +200,19 @@ export default function SimuladorCuotas() {
     setSolicitudSrc(`${spiderUrl}/${codSpider}?${params.toString()}`);
     setCargandoSolicitud(false);
   };
+
+  // Agrupar motos por marca para el select.
+  const marcas = useMemo(() => {
+    const map = new Map<string, Moto[]>();
+    for (const m of motos) {
+      const lista = map.get(m.marca) ?? [];
+      lista.push(m);
+      map.set(m.marca, lista);
+    }
+    return Array.from(map.entries());
+  }, [motos]);
+
+  const hayMoto = motoSeleccionada !== null;
 
   return (
     <section
@@ -224,32 +230,61 @@ export default function SimuladorCuotas() {
         </h2>
 
         <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2">
-          {/* Controles */}
+          {/* ── Controles ─────────────────────────────────────────── */}
           <div className="flex flex-col gap-8">
+            {/* Selector de moto */}
             <div>
-              <div className="mb-2 flex items-baseline justify-between">
-                <label htmlFor="slider-valor" className="label-mono !text-[11px]">
-                  Valor de la moto
-                </label>
-                <span className="font-display text-2xl font-bold text-white">
-                  {formatCLP(valor)}
-                </span>
+              <label
+                htmlFor="select-moto"
+                className="label-mono mb-2 block !text-[11px]"
+              >
+                Selecciona tu moto
+              </label>
+              <div className="relative">
+                <select
+                  id="select-moto"
+                  value={motoId}
+                  onChange={(e) => setMotoId(e.target.value)}
+                  className="min-h-[52px] w-full appearance-none rounded-lg border border-line bg-surface px-4 pr-10 font-display text-base font-bold text-white transition-colors duration-200 focus:border-red-500 focus:outline-none"
+                >
+                  <option value="" disabled>
+                    — Elige una moto —
+                  </option>
+                  {marcas.map(([marca, lista]) => (
+                    <optgroup key={marca} label={marca}>
+                      {lista.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.modelo} · {formatCLP(m.precioBono ?? m.precioLista)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <svg
+                  className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
               </div>
-              <input
-                id="slider-valor"
-                type="range"
-                min={valorMin}
-                max={valorMax}
-                step={VALOR_STEP}
-                value={valor}
-                onChange={alCambiarValor}
-                className="slider-rojo"
-                style={{ "--fill": `${fillValor}%` } as React.CSSProperties}
-                aria-valuetext={formatCLP(valor)}
-              />
+              {hayMoto && (
+                <p className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-muted">Precio</span>
+                  <span className="font-display text-2xl font-bold text-white">
+                    {formatCLP(valor)}
+                  </span>
+                </p>
+              )}
             </div>
 
-            <div>
+            {/* Pie inicial */}
+            <div className={hayMoto ? "" : "pointer-events-none opacity-30"}>
               <div className="mb-2 flex items-baseline justify-between">
                 <label htmlFor="slider-pie" className="label-mono !text-[11px]">
                   Pie inicial ({piePct}%)
@@ -272,7 +307,8 @@ export default function SimuladorCuotas() {
               />
             </div>
 
-            <div>
+            {/* Plazos */}
+            <div className={hayMoto ? "" : "pointer-events-none opacity-30"}>
               <p className="label-mono mb-3 !text-[11px]">Plazo en cuotas</p>
               <div
                 role="radiogroup"
@@ -299,102 +335,115 @@ export default function SimuladorCuotas() {
             </div>
           </div>
 
-          {/* Resultado */}
-          <div className="flex flex-col justify-center rounded-xl border border-line bg-surface p-8">
-            <div className="flex items-center justify-between">
-              <p className="label-mono !text-[11px]">Tu cuota mensual</p>
-              {real && (
-                <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400">
-                  Cuota real
-                </span>
-              )}
-            </div>
-            <p
-              className="mt-2 font-display font-extrabold text-red-500 transition-opacity duration-200"
-              style={{
-                fontSize: "clamp(48px, 7vw, 72px)",
-                lineHeight: 1,
-                opacity: estado === "cargando" ? 0.55 : 1,
-              }}
-            >
-              <span ref={cuotaRef}>{formatCLP(cuotaNum)}</span>
-            </p>
-
-            <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-6">
-              <div>
-                <dt className="label-mono !text-[11px]">Monto a financiar</dt>
-                <dd className="font-display text-xl font-bold text-white">
-                  {formatCLP(capital)}
-                </dd>
+          {/* ── Resultado ─────────────────────────────────────────── */}
+          <div className="flex flex-col justify-center rounded-xl border border-line bg-surface p-6 md:p-8">
+            {!hayMoto ? (
+              <div className="py-8 text-center">
+                <p className="text-4xl" aria-hidden="true">🏍️</p>
+                <p className="mt-4 text-base text-muted">
+                  Elige una moto del catálogo para ver tu cuota mensual estimada
+                </p>
               </div>
-              <div>
-                <dt className="label-mono !text-[11px]">Plazo</dt>
-                <dd className="font-display text-xl font-bold text-white">
-                  {plazo} cuotas
-                </dd>
-              </div>
-              {real && (
-                <>
-                  <div>
-                    <dt className="label-mono !text-[11px]">CAE</dt>
-                    <dd className="font-display text-xl font-bold text-white">
-                      {formatPct(cuotaReal!.cae)}%
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label-mono !text-[11px]">Costo total crédito</dt>
-                    <dd className="font-display text-xl font-bold text-white">
-                      {formatCLP(cuotaReal!.totalCredito)}
-                    </dd>
-                  </div>
-                </>
-              )}
-            </dl>
-
-            <p className="label-mono mt-6 !text-[10px] !leading-relaxed">
-              {real
-                ? "Cuota, CAE y costo total entregados por Autofin. Valores referenciales sujetos a evaluación crediticia."
-                : estado === "error"
-                  ? "No pudimos conectar con Autofin: mostramos un cálculo referencial. Las condiciones finales las define la tienda."
-                  : "[REFERENCIAL] Tasa y condiciones finales las define la tienda. Esta simulación es solo orientativa."}
-            </p>
-
-            {opciones ? (
-              <>
-                <motion.button
-                  type="button"
-                  onClick={abrirSolicitud}
-                  disabled={cargandoSolicitud}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600 disabled:opacity-60"
-                >
-                  {cargandoSolicitud ? "Abriendo…" : "Solicitar financiamiento →"}
-                </motion.button>
-                <a
-                  href={linkWhatsApp(mensajeWsp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={registrarLeadWsp}
-                  className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-md border border-line px-6 text-sm font-semibold text-muted transition-colors duration-200 hover:border-white/25 hover:text-white"
-                >
-                  Prefiero cotizar por WhatsApp
-                </a>
-              </>
             ) : (
-              <motion.a
-                href={linkWhatsApp(mensajeWsp)}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                onClick={registrarLeadWsp}
-                className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
-              >
-                Cotizar financiamiento →
-              </motion.a>
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="label-mono !text-[11px]">Tu cuota mensual</p>
+                  {real && (
+                    <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400">
+                      Cuota real
+                    </span>
+                  )}
+                </div>
+                <p
+                  className="mt-2 font-display font-extrabold text-red-500 transition-opacity duration-200"
+                  style={{
+                    fontSize: "clamp(48px, 7vw, 72px)",
+                    lineHeight: 1,
+                    opacity: estado === "cargando" ? 0.55 : 1,
+                  }}
+                >
+                  <span ref={cuotaRef}>{formatCLP(cuotaNum)}</span>
+                </p>
+
+                <p className="mt-2 text-sm text-muted">{nombreMoto}</p>
+
+                <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-line pt-6">
+                  <div>
+                    <dt className="label-mono !text-[11px]">Monto a financiar</dt>
+                    <dd className="font-display text-xl font-bold text-white">
+                      {formatCLP(capital)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="label-mono !text-[11px]">Plazo</dt>
+                    <dd className="font-display text-xl font-bold text-white">
+                      {plazo} cuotas
+                    </dd>
+                  </div>
+                  {real && (
+                    <>
+                      <div>
+                        <dt className="label-mono !text-[11px]">CAE</dt>
+                        <dd className="font-display text-xl font-bold text-white">
+                          {formatPct(cuotaReal!.cae)}%
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="label-mono !text-[11px]">Costo total crédito</dt>
+                        <dd className="font-display text-xl font-bold text-white">
+                          {formatCLP(cuotaReal!.totalCredito)}
+                        </dd>
+                      </div>
+                    </>
+                  )}
+                </dl>
+
+                <p className="label-mono mt-6 !text-[10px] !leading-relaxed">
+                  {real
+                    ? "Cuota, CAE y costo total entregados por Autofin. Valores referenciales sujetos a evaluación crediticia."
+                    : estado === "error"
+                      ? "No pudimos conectar con Autofin: mostramos un cálculo referencial. Las condiciones finales las define la tienda."
+                      : "[REFERENCIAL] Tasa y condiciones finales las define la tienda. Esta simulación es solo orientativa."}
+                </p>
+
+                {opciones ? (
+                  <>
+                    <motion.button
+                      type="button"
+                      onClick={abrirSolicitud}
+                      disabled={cargandoSolicitud}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600 disabled:opacity-60"
+                    >
+                      {cargandoSolicitud ? "Abriendo…" : "Solicitar financiamiento →"}
+                    </motion.button>
+                    <a
+                      href={linkWhatsApp(mensajeWsp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={registrarLeadWsp}
+                      className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-md border border-line px-6 text-sm font-semibold text-muted transition-colors duration-200 hover:border-white/25 hover:text-white"
+                    >
+                      Prefiero cotizar por WhatsApp
+                    </a>
+                  </>
+                ) : (
+                  <motion.a
+                    href={linkWhatsApp(mensajeWsp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    onClick={registrarLeadWsp}
+                    className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+                  >
+                    Cotizar financiamiento →
+                  </motion.a>
+                )}
+              </>
             )}
           </div>
         </div>
