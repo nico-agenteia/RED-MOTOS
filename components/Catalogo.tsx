@@ -65,7 +65,14 @@ function CardMoto({ moto }: { moto: Moto }) {
           loading="lazy"
           className="relative h-full w-full object-cover transition-transform duration-300 ease-out-expo group-hover:scale-[1.04]"
         />
-        {moto.precioBono !== null && (
+        {moto.sinStock && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+            <span className="rounded-md border-2 border-red-500 bg-black/80 px-4 py-2 font-display text-lg font-extrabold uppercase tracking-wider text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+              Sin stock
+            </span>
+          </div>
+        )}
+        {moto.precioBono !== null && !moto.sinStock && (
           <span className="absolute left-4 top-4 rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
             Descuento
           </span>
@@ -121,16 +128,24 @@ function CardMoto({ moto }: { moto: Moto }) {
 
         {/* Botón WhatsApp — z-10 para quedar sobre el overlay, nunca dentro de otro <a> */}
         <motion.a
-          href={linkWhatsApp(mensajeCotizacion(moto))}
+          href={linkWhatsApp(
+            moto.sinStock
+              ? `Hola! Vi que la ${moto.marca} ${moto.modelo} está sin stock en la web. ¿Tienen fecha de reposición?`
+              : mensajeCotizacion(moto),
+          )}
           target="_blank"
           rel="noopener noreferrer"
           whileTap={{ scale: 0.97 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="relative z-10 mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-red-500 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600"
-          aria-label={`Cotizar ${moto.marca} ${moto.modelo} por WhatsApp`}
+          className={`relative z-10 mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-md text-sm font-semibold transition-colors duration-200 ${
+            moto.sinStock
+              ? "border border-line bg-surface-2 text-muted hover:border-white/25 hover:text-white"
+              : "bg-red-500 text-white hover:bg-red-600"
+          }`}
+          aria-label={`${moto.sinStock ? "Consultar disponibilidad de" : "Cotizar"} ${moto.marca} ${moto.modelo} por WhatsApp`}
           onClick={(e) => e.stopPropagation()}
         >
-          Cotizar
+          {moto.sinStock ? "Consultar disponibilidad" : "Cotizar"}
         </motion.a>
       </div>
     </motion.article>

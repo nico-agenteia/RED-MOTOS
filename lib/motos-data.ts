@@ -16,6 +16,7 @@ function filaAMoto(fila: Record<string, unknown>): Moto {
     aptaPrincipiante: Boolean(fila.apta_principiante),
     destacado: Boolean(fila.destacado),
     orden: (fila.orden as number) ?? 0,
+    sinStock: Boolean(fila.sin_stock),
   };
 }
 

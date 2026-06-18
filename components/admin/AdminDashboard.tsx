@@ -65,6 +65,17 @@ export default function AdminDashboard() {
     paginaActual * POR_PAGINA,
   );
 
+  async function toggleStock(moto: Moto) {
+    const nuevo = !moto.sinStock;
+    await fetch(
+      `/api/motos?id=${encodeURIComponent(moto.id)}&sinStock=${nuevo}`,
+      { method: "PATCH" },
+    );
+    setMotos((prev) =>
+      prev.map((m) => (m.id === moto.id ? { ...m, sinStock: nuevo } : m)),
+    );
+  }
+
   async function eliminar(moto: Moto) {
     const confirmado = window.confirm(
       `¿Eliminar la ${moto.marca} ${moto.modelo} del catálogo?`,
@@ -153,8 +164,8 @@ export default function AdminDashboard() {
                     valor: motos.filter((m) => m.destacado).length,
                   },
                   {
-                    etiqueta: "Marcas",
-                    valor: new Set(motos.map((m) => m.marca)).size,
+                    etiqueta: "Sin stock",
+                    valor: motos.filter((m) => m.sinStock).length,
                   },
                 ].map((card) => (
                   <div
@@ -224,6 +235,9 @@ export default function AdminDashboard() {
                         Descuento
                       </th>
                       <th className="label-mono px-4 py-3 !text-[10px]">
+                        Stock
+                      </th>
+                      <th className="label-mono px-4 py-3 !text-[10px]">
                         Acciones
                       </th>
                     </tr>
@@ -232,7 +246,7 @@ export default function AdminDashboard() {
                     {cargando ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-4 py-12 text-center text-muted"
                         >
                           Cargando stock…
@@ -241,7 +255,7 @@ export default function AdminDashboard() {
                     ) : visibles.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-4 py-12 text-center text-muted"
                         >
                           No hay motos que coincidan.
@@ -278,6 +292,19 @@ export default function AdminDashboard() {
                             ) : (
                               <span className="text-muted">—</span>
                             )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => toggleStock(m)}
+                              className={`inline-flex min-h-[32px] items-center rounded-full px-3 text-[11px] font-semibold transition-colors duration-200 ${
+                                m.sinStock
+                                  ? "bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                                  : "bg-green-600/15 text-green-400 hover:bg-green-600/25"
+                              }`}
+                            >
+                              {m.sinStock ? "Sin stock" : "En stock"}
+                            </button>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
@@ -346,7 +373,18 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleStock(m)}
+                            className={`min-h-[36px] rounded-full px-3 text-xs font-semibold transition-colors duration-200 ${
+                              m.sinStock
+                                ? "bg-red-500/15 text-red-400"
+                                : "bg-green-600/15 text-green-400"
+                            }`}
+                          >
+                            {m.sinStock ? "Sin stock" : "En stock"}
+                          </button>
                           <button
                             type="button"
                             onClick={() => {

@@ -17,6 +17,7 @@ create table if not exists motos (
   apta_principiante boolean not null default false,
   destacado       boolean not null default false,   -- aparece en ShowcasePremium
   orden           int  not null default 0,          -- orden manual en catálogo
+  sin_stock       boolean not null default false,    -- admin marca sin disponibilidad
   activo          boolean not null default true,    -- false = baja lógica
   creado_en       timestamptz default now(),
   actualizado_en  timestamptz default now()

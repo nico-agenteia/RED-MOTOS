@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import type { Moto, Uso } from "@/lib/tipos";
@@ -201,10 +202,13 @@ export default function MotoForm({
     }
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {abierto && (
-        <>
+        <div
+          key="wrapper-motoform"
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+        >
           <motion.div
             key="scrim-motoform"
             initial={{ opacity: 0 }}
@@ -213,18 +217,18 @@ export default function MotoForm({
             transition={{ duration: 0.2 }}
             onClick={onCerrar}
             aria-hidden="true"
-            className="fixed inset-0 z-40 bg-black/60"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
           <motion.div
             key="modal-motoform"
             role="dialog"
             aria-modal="true"
             aria-label={esEdicion ? "Editar moto del catálogo" : "Agregar moto al catálogo"}
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            initial={{ opacity: 0, scale: 0.95, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            exit={{ opacity: 0, scale: 0.95, y: 24 }}
             transition={{ type: "spring", stiffness: 500, damping: 40 }}
-            className="fixed left-1/2 top-1/2 z-50 max-h-[90dvh] w-[calc(100%-32px)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-line bg-surface p-6 shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+            className="relative z-10 mx-4 max-h-[85dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-xl border border-line bg-[#111] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.8)]"
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-2xl font-bold uppercase text-white">
@@ -375,8 +379,9 @@ export default function MotoForm({
               </div>
             </form>
           </motion.div>
-        </>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

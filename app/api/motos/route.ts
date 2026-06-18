@@ -67,6 +67,7 @@ function filaAMoto(fila: Record<string, unknown>): Moto {
     aptaPrincipiante: Boolean(fila.apta_principiante),
     destacado: Boolean(fila.destacado),
     orden: (fila.orden as number) ?? 0,
+    sinStock: Boolean(fila.sin_stock),
   };
 }
 
@@ -220,6 +221,38 @@ export async function PUT(req: NextRequest) {
   } catch (err) {
     console.error("[PUT /api/motos]", err);
     return NextResponse.json({ error: "Error al actualizar la moto" }, { status: 500 });
+  }
+}
+
+/** PATCH ?id=&sinStock=true|false → toggle de stock. */
+export async function PATCH(req: NextRequest) {
+  const bloqueo = requiereSesion();
+  if (bloqueo) return bloqueo;
+
+  const id = req.nextUrl.searchParams.get("id");
+  const sinStockParam = req.nextUrl.searchParams.get("sinStock");
+  if (!id || sinStockParam === null) {
+    return NextResponse.json({ error: "Faltan parámetros id y sinStock" }, { status: 400 });
+  }
+
+  const sinStock = sinStockParam === "true";
+
+  try {
+    const sb = getSupabase();
+    const { error } = await sb
+      .from("motos")
+      .update({ sin_stock: sinStock })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    revalidatePath("/");
+    revalidatePath("/catalogo");
+
+    return NextResponse.json({ ok: true, sinStock });
+  } catch (err) {
+    console.error("[PATCH /api/motos]", err);
+    return NextResponse.json({ error: "Error al actualizar stock" }, { status: 500 });
   }
 }
 

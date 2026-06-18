@@ -50,6 +50,8 @@ export interface Moto {
   destacado: boolean;
   /** Orden manual en el catálogo (menor = primero). */
   orden: number;
+  /** Moto marcada como sin stock por el admin. */
+  sinStock: boolean;
 }
 
 export interface LeadRecomendador {

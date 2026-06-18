@@ -142,7 +142,14 @@ function CardHermana({ moto }: { moto: Moto }) {
           loading="lazy"
           className="h-full w-full object-contain p-4 transition-transform duration-300 ease-out group-hover:scale-[1.04]"
         />
-        {moto.precioBono !== null && (
+        {moto.sinStock && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+            <span className="rounded-md border-2 border-red-500 bg-black/80 px-3 py-1.5 font-display text-sm font-extrabold uppercase tracking-wider text-red-500">
+              Sin stock
+            </span>
+          </div>
+        )}
+        {moto.precioBono !== null && !moto.sinStock && (
           <span className="absolute left-3 top-3 rounded-sm bg-red-500 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-white">
             Descuento
           </span>
@@ -296,7 +303,14 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
               className="mx-auto h-auto w-full object-contain"
             />
 
-            {moto.precioBono !== null && (
+            {moto.sinStock && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+                <span className="rounded-lg border-2 border-red-500 bg-black/80 px-6 py-3 font-display text-2xl font-extrabold uppercase tracking-wider text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.35)] md:text-3xl">
+                  Sin stock
+                </span>
+              </div>
+            )}
+            {moto.precioBono !== null && !moto.sinStock && (
               <span className="absolute left-5 top-5 rounded-sm bg-red-500 px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.15em] text-white">
                 Descuento
               </span>
@@ -566,14 +580,33 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
                 )}
               </div>
 
+              {moto.sinStock && (
+                <div className="mt-6 flex items-center gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+                  <span className="font-display text-sm font-extrabold uppercase tracking-wider text-red-500">
+                    Sin stock
+                  </span>
+                  <span className="text-sm text-red-300/80">
+                    Consulta disponibilidad por WhatsApp
+                  </span>
+                </div>
+              )}
+
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
-                  href={linkWhatsApp(mensajeCotizacion(moto))}
+                  href={linkWhatsApp(
+                    moto.sinStock
+                      ? `Hola! Vi que la ${moto.marca} ${moto.modelo} está sin stock. ¿Tienen fecha de reposición?`
+                      : mensajeCotizacion(moto),
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[48px] items-center rounded-md bg-red-500 px-8 font-semibold text-white transition-colors duration-200 hover:bg-red-600"
+                  className={`inline-flex min-h-[48px] items-center rounded-md px-8 font-semibold transition-colors duration-200 ${
+                    moto.sinStock
+                      ? "border border-line bg-surface-2 text-muted hover:border-white/25 hover:text-white"
+                      : "bg-red-500 text-white hover:bg-red-600"
+                  }`}
                 >
-                  Cotizar por WhatsApp
+                  {moto.sinStock ? "Consultar disponibilidad" : "Cotizar por WhatsApp"}
                 </a>
                 <Link
                   href="/#catalogo"

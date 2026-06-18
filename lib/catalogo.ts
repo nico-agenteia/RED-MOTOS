@@ -23,6 +23,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 0,
+    sinStock: false,
   },
   {
     id: "re-classic-350",
@@ -38,6 +39,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 1,
+    sinStock: false,
   },
   {
     id: "re-classic-350-goan",
@@ -53,6 +55,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 2,
+    sinStock: false,
   },
   {
     id: "re-meteor-350-fireball",
@@ -68,6 +71,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 3,
+    sinStock: false,
   },
   {
     id: "re-meteor-350-stellar",
@@ -83,6 +87,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 4,
+    sinStock: false,
   },
   {
     id: "re-meteor-350-sundowner",
@@ -98,6 +103,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 5,
+    sinStock: false,
   },
   {
     id: "re-grr-450",
@@ -113,6 +119,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 6,
+    sinStock: false,
   },
   {
     id: "re-himalayan-452",
@@ -128,6 +135,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 7,
+    sinStock: false,
   },
   {
     id: "re-himalayan-452-tubular",
@@ -143,6 +151,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 8,
+    sinStock: false,
   },
   {
     id: "re-himalayan-452-rally",
@@ -158,6 +167,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 9,
+    sinStock: false,
   },
   {
     id: "re-classic-650",
@@ -173,6 +183,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 10,
+    sinStock: false,
   },
   {
     id: "re-classic-650-chrome",
@@ -188,6 +199,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 11,
+    sinStock: false,
   },
   {
     id: "re-shotgun-650",
@@ -203,6 +215,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 12,
+    sinStock: false,
   },
   {
     id: "re-bear-650",
@@ -218,6 +231,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 13,
+    sinStock: false,
   },
   {
     id: "re-super-meteor-650-astral",
@@ -233,6 +247,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 14,
+    sinStock: false,
   },
   {
     id: "re-super-meteor-650-interestellar",
@@ -248,6 +263,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 15,
+    sinStock: false,
   },
   {
     id: "re-super-meteor-650-celestial",
@@ -263,6 +279,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: true,
     orden: 16,
+    sinStock: false,
   },
 
   // ── SUZUKI ───────────────────────────────────────────────────────────
@@ -280,6 +297,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 17,
+    sinStock: false,
   },
   {
     id: "sz-gsx-150-frf-gixxer",
@@ -295,6 +313,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 18,
+    sinStock: false,
   },
   {
     id: "sz-gsx-150-rf-gixxer",
@@ -310,6 +329,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 19,
+    sinStock: false,
   },
   {
     id: "sz-gsx250fi-gixxer",
@@ -325,6 +345,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 20,
+    sinStock: false,
   },
   {
     id: "sz-gsx250di-gixxer",
@@ -340,6 +361,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 21,
+    sinStock: false,
   },
   {
     id: "sz-gsx-8s",
@@ -355,6 +377,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 22,
+    sinStock: false,
   },
   {
     id: "sz-gsx-s1000",
@@ -370,6 +393,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 23,
+    sinStock: false,
   },
   {
     id: "sz-gsx-r1000r",
@@ -385,6 +409,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: true,
     orden: 24,
+    sinStock: false,
   },
   {
     id: "sz-gsx1300ra-hayabusa",
@@ -400,6 +425,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 25,
+    sinStock: false,
   },
   {
     id: "sz-vstrom-ds250-sx",
@@ -415,6 +441,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 26,
+    sinStock: false,
   },
   {
     id: "sz-vstrom-dl650xa",
@@ -430,6 +457,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 27,
+    sinStock: false,
   },
   {
     id: "sz-vstrom-dl800-de",
@@ -445,6 +473,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 28,
+    sinStock: false,
   },
   {
     id: "sz-vstrom-dl1050-de",
@@ -460,6 +489,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 29,
+    sinStock: false,
   },
   {
     id: "sz-dr125l",
@@ -475,6 +505,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 30,
+    sinStock: false,
   },
   {
     id: "sz-rmz250",
@@ -490,6 +521,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 31,
+    sinStock: false,
   },
   {
     id: "sz-rmz450",
@@ -505,6 +537,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 32,
+    sinStock: false,
   },
   {
     id: "sz-ltf-400-fsm3",
@@ -520,6 +553,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 33,
+    sinStock: false,
   },
   {
     id: "sz-lta-900xpm3",
@@ -535,6 +569,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 34,
+    sinStock: false,
   },
   {
     id: "sz-lta-750xpm3",
@@ -550,6 +585,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 35,
+    sinStock: false,
   },
 
   // ── CYCLONE ──────────────────────────────────────────────────────────
@@ -567,6 +603,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: true,
     orden: 36,
+    sinStock: false,
   },
   {
     id: "cy-rx-401",
@@ -582,6 +619,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 37,
+    sinStock: false,
   },
   {
     id: "cy-rx-401-maletas",
@@ -597,6 +635,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 38,
+    sinStock: false,
   },
   {
     id: "cy-rx1",
@@ -612,6 +651,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 39,
+    sinStock: false,
   },
 
   // ── ZONSEN (Zongshen) ────────────────────────────────────────────────
@@ -629,6 +669,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 40,
+    sinStock: false,
   },
   {
     id: "zs-rx3",
@@ -644,6 +685,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: true,
     orden: 41,
+    sinStock: false,
   },
 
   // ── KYMCO ────────────────────────────────────────────────────────────
@@ -661,6 +703,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: true,
     orden: 42,
+    sinStock: false,
   },
   {
     id: "ky-mxu-150",
@@ -676,6 +719,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: true,
     destacado: false,
     orden: 43,
+    sinStock: false,
   },
   {
     id: "ky-mxu-250",
@@ -691,6 +735,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 44,
+    sinStock: false,
   },
   {
     id: "ky-mxu-300r",
@@ -706,6 +751,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 45,
+    sinStock: false,
   },
   {
     id: "ky-uxv-450",
@@ -721,6 +767,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 46,
+    sinStock: false,
   },
   {
     id: "ky-uxv-700ia",
@@ -736,6 +783,7 @@ export const CATALOGO: Moto[] = [
     aptaPrincipiante: false,
     destacado: false,
     orden: 47,
+    sinStock: false,
   },
 ];
 
