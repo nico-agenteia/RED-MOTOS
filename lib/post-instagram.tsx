@@ -7,6 +7,7 @@
 // WebP de forma fiable). Las fuentes llegan como ArrayBuffer (Oswald), para no
 // depender de fuentes del sistema. Devuelve un Buffer PNG.
 
+import React from "react";
 import satori from "satori";
 
 export interface OpcionesPostInstagram {

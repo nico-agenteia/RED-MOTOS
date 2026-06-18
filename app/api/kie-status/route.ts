@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase";
-import { renderPostInstagram } from "@/lib/post-instagram";
+import { componerPostInstagram } from "@/lib/componer-post";
 
 const KIE_BASE = "https://api.kie.ai/api/v1";
 
@@ -98,8 +96,12 @@ export async function GET(req: NextRequest) {
     } catch { /* continuar sin datos de tarea */ }
 
     // El estilo "Redes" del Estudio de fotos ("foto-redes") se compone con la
-    // plantilla de marca de Instagram.
-    const aplicarPlantilla = tarea?.tipo === "foto-redes";
+    // plantilla de marca de Instagram. Se decide por el query param `estilo`
+    // (el frontend lo conoce siempre) con fallback al tipo guardado en BD, para
+    // no depender de que el registro en ia_tareas exista/se haya leído bien.
+    const estiloParam = req.nextUrl.searchParams.get("estilo");
+    const aplicarPlantilla =
+      estiloParam === "redes" || tarea?.tipo === "foto-redes";
 
     // Descargar imagen desde KIE
     let imagenBuffer: Buffer;
@@ -121,52 +123,7 @@ export async function GET(req: NextRequest) {
 
     if (aplicarPlantilla) {
       try {
-        const sharp = (await import("sharp")).default;
-        const publicDir = join(process.cwd(), "public");
-
-        const fileToPngDataUri = async (filePath: string): Promise<string | null> => {
-          if (!existsSync(filePath)) return null;
-          const buf = readFileSync(filePath);
-          const png = await sharp(buf).png().toBuffer();
-          return `data:image/png;base64,${png.toString("base64")}`;
-        };
-
-        const motoPng = await sharp(imagenBuffer)
-          .resize(1080, 1080, { fit: "cover", position: "centre" })
-          .png()
-          .toBuffer();
-        const motoDataUri = `data:image/png;base64,${motoPng.toString("base64")}`;
-
-        const logoDataUri = await fileToPngDataUri(
-          join(publicDir, "logos", "red-motos-logo.webp"),
-        );
-
-        const archivosMarca = [
-          "logo-royal-enfield",
-          "logo-suzuki",
-          "logo-kymco",
-          "logo-cyclone",
-          "logo-zonsen",
-        ];
-        const marcaLogos: string[] = [];
-        for (const f of archivosMarca) {
-          const uri = await fileToPngDataUri(join(publicDir, "logos", `${f}.webp`));
-          if (uri) marcaLogos.push(uri);
-        }
-
-        const fontBoldBuf = readFileSync(join(publicDir, "fonts", "Oswald-700.ttf"));
-        const fontMediumBuf = readFileSync(join(publicDir, "fonts", "Oswald-500.ttf"));
-        const fontBold = fontBoldBuf.buffer.slice(fontBoldBuf.byteOffset, fontBoldBuf.byteOffset + fontBoldBuf.byteLength);
-        const fontMedium = fontMediumBuf.buffer.slice(fontMediumBuf.byteOffset, fontMediumBuf.byteOffset + fontMediumBuf.byteLength);
-
-        const svg = await renderPostInstagram({
-          motoDataUri,
-          logoDataUri,
-          marcaLogos,
-          fontBold,
-          fontMedium,
-        });
-        imagenBuffer = await sharp(Buffer.from(svg)).webp({ quality: 88 }).toBuffer();
+        imagenBuffer = await componerPostInstagram(imagenBuffer);
         extensionSalida = "webp";
         contentTypeSalida = "image/webp";
       } catch (err) {

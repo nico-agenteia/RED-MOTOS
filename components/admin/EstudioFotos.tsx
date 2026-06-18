@@ -28,6 +28,31 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultadoUrl, setResultadoUrl] = useState<string | null>(null);
+  const [reaplicando, setReaplicando] = useState(false);
+
+  // Re-aplica el marco de Instagram a la imagen ya generada, sin volver a
+  // llamar a KIE (no gasta créditos). Útil para iterar sobre el diseño.
+  async function reaplicarMarco() {
+    if (!resultadoUrl) return;
+    setReaplicando(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/aplicar-plantilla", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imagenUrl: resultadoUrl }),
+      });
+      const datos = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(datos?.error ?? "No se pudo aplicar el marco");
+      } else if (datos?.imagenUrl) {
+        setResultadoUrl(datos.imagenUrl);
+      }
+    } catch {
+      setError("Error de conexión al aplicar el marco.");
+    }
+    setReaplicando(false);
+  }
 
   function cargarArchivo(file: File) {
     const esImagen =
@@ -91,7 +116,7 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
       const taskId: string = datos.taskId;
       pollRef.current = setInterval(async () => {
         const estadoRes = await fetch(
-          `/api/kie-status?taskId=${encodeURIComponent(taskId)}`,
+          `/api/kie-status?taskId=${encodeURIComponent(taskId)}&estilo=${encodeURIComponent(estilo)}`,
         );
         const estado = await estadoRes.json().catch(() => null);
         if (!estadoRes.ok) {
@@ -294,6 +319,16 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
                 >
                   ↓ Descargar imagen
                 </button>
+                {estilo === "redes" && (
+                  <button
+                    type="button"
+                    onClick={reaplicarMarco}
+                    disabled={reaplicando}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-line px-5 text-sm font-medium text-muted transition-colors duration-200 hover:border-white/25 hover:text-white disabled:opacity-40"
+                  >
+                    {reaplicando ? "Aplicando…" : "↻ Re-aplicar marco IG"}
+                  </button>
+                )}
                 {estilo === "catalogo" && onGuardarEnCatalogo && (
                   <button
                     type="button"
