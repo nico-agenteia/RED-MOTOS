@@ -27,9 +27,16 @@ function b64ToArrayBuffer(b64: string): ArrayBuffer {
 export async function componerPostInstagram(imagenBuffer: Buffer): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
 
-  // Moto cuadrada como fondo del post.
+  // Moto cuadrada como fondo del post. Usamos "contain" (no "cover") para NO
+  // recortar la moto: KIE suele devolver la imagen con el aspecto de la foto de
+  // entrada (apaisada/vertical), y "cover" cortaba las ruedas. Las bandas que
+  // quedan se rellenan en negro, justo donde el marco pone sus degradados
+  // oscuros (arriba/abajo), así no se nota la unión.
   const motoPng = await sharp(imagenBuffer)
-    .resize(1080, 1080, { fit: "cover", position: "centre" })
+    .resize(1080, 1080, {
+      fit: "contain",
+      background: { r: 10, g: 10, b: 10, alpha: 1 },
+    })
     .png()
     .toBuffer();
   const motoDataUri = `data:image/png;base64,${motoPng.toString("base64")}`;

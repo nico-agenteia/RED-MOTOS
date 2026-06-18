@@ -25,14 +25,30 @@ function promptCatalogo(marca: Marca): string {
 }
 
 // El estilo "Redes" se compone luego con la plantilla de Instagram (Satori),
-// por eso la moto debe quedar centrada con espacio oscuro arriba y abajo.
+// que cubre la franja superior e inferior con degradados oscuros para el texto.
+// Por eso la moto debe quedar COMPLETA y centrada en la banda media, con margen
+// generoso en los cuatro lados, y sobre un fondo que CONTRASTE con la moto.
 const PROMPT_REDES =
-  "Eye-catching cinematic square 1:1 image of this exact motorcycle. " +
-  "Dramatic high-contrast DARK scene with a strong accent glow and rim light so the motorcycle " +
-  "clearly stands out. The bike is the hero, fully visible and centered in the MIDDLE of the frame, " +
-  "with empty dark space at the TOP and BOTTOM (reserved for overlays). " +
-  "No text, no watermarks, no logos. Photorealistic, editorial, premium automotive ad look. " +
+  "Premium automotive advertisement, square 1:1 image of this exact motorcycle. " +
+  "Show the COMPLETE motorcycle, fully visible with NOTHING cropped, as the hero, centered in the MIDDLE band of the frame. " +
+  "Leave a comfortable empty margin around the entire bike on ALL FOUR sides, and extra empty space at the TOP and BOTTOM (reserved for text overlays); no wheel, mirror or any part may touch the image edges. " +
+  "Background: a clean, bright, vividly-lit seamless studio backdrop whose color strongly CONTRASTS with the motorcycle's own body color " +
+  "(use a bright warm or saturated colored backdrop for a dark or black bike; use a deep, richly saturated backdrop for a light, white or silver bike) — never a dull, muddy or low-contrast background. " +
+  "High-key even studio lighting with a crisp rim light and a subtle floor reflection so the bike pops and clearly separates from the background. " +
+  "No people, no clutter, no text, no watermarks, no logos. Photorealistic, editorial, color-accurate. " +
   "Keep the bike identical, do not alter model, colors, decals or proportions.";
+
+/** Detecta HEIC/HEIF por tipo MIME, extensión o caja ftyp (magic bytes). */
+function esHeic(buf: Buffer, nombre: string, tipo: string): boolean {
+  if (/heic|heif/i.test(tipo)) return true;
+  if (/\.(heic|heif)$/i.test(nombre)) return true;
+  // ...ftyp<brand> en bytes 4–12; marcas HEIF conocidas
+  if (buf.length >= 12 && buf.toString("ascii", 4, 8) === "ftyp") {
+    const marca = buf.toString("ascii", 8, 12);
+    return ["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1"].includes(marca);
+  }
+  return false;
+}
 
 const MARCAS_VALIDAS = Object.keys(FONDOS_MARCA) as Marca[];
 
@@ -126,20 +142,43 @@ export async function POST(req: NextRequest) {
   // acotado), así KIE puede leerlo venga en el formato que venga (PNG, WebP,
   // AVIF, TIFF, HEIC…). Si sharp no logra decodificarlo, se sube el original.
   const original = Buffer.from(await foto.arrayBuffer());
-  let buffer: Buffer = original;
+
+  // iPhone sube HEIC/HEIF por defecto, y los binarios prebuilt de sharp/libvips
+  // NO decodifican HEIF (licencia). KIE además rechaza el .heic crudo
+  // ("image_urls file type not supported"). Lo convertimos a JPEG con
+  // heic-convert (decodificador en JS puro) antes de pasarlo por sharp.
+  let entrada = original;
+  if (esHeic(original, foto.name, foto.type)) {
+    try {
+      const heicConvert = (await import("heic-convert")).default;
+      const jpeg = await heicConvert({ buffer: original, format: "JPEG", quality: 0.92 });
+      entrada = Buffer.from(jpeg);
+    } catch (err) {
+      console.error("[procesar-imagen] No se pudo convertir HEIC:", err);
+      return NextResponse.json(
+        { error: "No se pudo leer la imagen HEIC del teléfono. Prueba con una foto JPG o PNG." },
+        { status: 422 },
+      );
+    }
+  }
+
+  let buffer: Buffer = entrada;
   let extension = "jpg";
   let contentType = "image/jpeg";
   try {
     const sharp = (await import("sharp")).default;
-    buffer = await sharp(original)
+    buffer = await sharp(entrada)
       .rotate()
       .resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toBuffer();
   } catch {
-    buffer = original;
-    extension = (foto.name.split(".").pop() || "jpg").toLowerCase();
-    contentType = foto.type || "application/octet-stream";
+    // entrada ya es JPEG si venía de HEIC; si no, subimos el original tal cual.
+    buffer = entrada;
+    if (entrada === original) {
+      extension = (foto.name.split(".").pop() || "jpg").toLowerCase();
+      contentType = foto.type || "application/octet-stream";
+    }
   }
   const nombreArchivo = `raw/${archivoId}.${extension}`;
 

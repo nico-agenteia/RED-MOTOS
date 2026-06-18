@@ -8,6 +8,15 @@ const SHARP_NATIVO = [
   "./node_modules/@img/sharp-libvips-linux-x64/**",
 ];
 
+// heic-convert decodifica HEIC vía libheif, que lee un .wasm externo en runtime.
+// Igual que con el .so de sharp, el file-tracing de Next puede no incluirlo, así
+// que forzamos sus archivos en la función que convierte las subidas (HEIC iPhone).
+const HEIC_DEPS = [
+  "./node_modules/libheif-js/**",
+  "./node_modules/heic-convert/**",
+  "./node_modules/heic-decode/**",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -18,11 +27,11 @@ const nextConfig = {
   // serverless (rutas de /api) lo carguen desde node_modules y no intente
   // empaquetarlo webpack (causa crash al iniciar la función en Vercel).
   experimental: {
-    serverComponentsExternalPackages: ["sharp"],
+    serverComponentsExternalPackages: ["sharp", "heic-convert"],
     outputFileTracingIncludes: {
       "/api/kie-status": SHARP_NATIVO,
       "/api/aplicar-plantilla": SHARP_NATIVO,
-      "/api/procesar-imagen": SHARP_NATIVO,
+      "/api/procesar-imagen": [...SHARP_NATIVO, ...HEIC_DEPS],
       "/api/storage/catalogo": SHARP_NATIVO,
     },
   },
