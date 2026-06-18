@@ -100,7 +100,7 @@ export async function renderPostInstagram({
               letterSpacing: 4,
             }}
           >
-            RED MOTOS CHILE
+            CONCESIONARIO OFICIAL
           </div>
           <div
             style={{
@@ -112,7 +112,7 @@ export async function renderPostInstagram({
               lineHeight: 1.05,
             }}
           >
-            CONCESIONARIO OFICIAL
+            RED MOTOS CHILE
           </div>
           <div
             style={{

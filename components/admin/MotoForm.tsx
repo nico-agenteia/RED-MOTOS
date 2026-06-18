@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
@@ -93,6 +93,33 @@ export default function MotoForm({
   const [errores, setErrores] = useState<Errores>({});
   const [errorGlobal, setErrorGlobal] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [galeriaAbierta, setGaleriaAbierta] = useState(false);
+  const [imagenesGaleria, setImagenesGaleria] = useState<{ nombre: string; url: string }[]>([]);
+  const [cargandoGaleria, setCargandoGaleria] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [subiendoArchivo, setSubiendoArchivo] = useState(false);
+
+  const cargarGaleria = useCallback(async () => {
+    setCargandoGaleria(true);
+    try {
+      const res = await fetch("/api/storage/catalogo");
+      const data = await res.json();
+      setImagenesGaleria(data.imagenes ?? []);
+    } catch { /* silenciar */ }
+    setCargandoGaleria(false);
+  }, []);
+
+  async function subirArchivo(file: File) {
+    setSubiendoArchivo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/storage/catalogo", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) setImagenUrl(data.url);
+    } catch { /* silenciar */ }
+    setSubiendoArchivo(false);
+  }
 
   // Precarga los datos cuando se edita o cuando llega una imagenUrlInicial
   useEffect(() => {
@@ -297,11 +324,132 @@ export default function MotoForm({
               )}
 
               {/* URL imagen */}
-              <label className="flex flex-col gap-1">
-                <span className="label-mono !text-[11px]">URL de imagen</span>
-                <input type="text" value={imagenUrl} onChange={(e) => setImagenUrl(e.target.value)} placeholder="/motos/Hunter350.webp o https://…" className={claseInput} />
+              {/* ── Imagen ───────────────────────────── */}
+              <div className="flex flex-col gap-2">
+                <span className="label-mono !text-[11px]">Imagen</span>
+                {imagenUrl ? (
+                  <div className="relative w-full overflow-hidden rounded-lg border border-line bg-black">
+                    <img
+                      src={imagenUrl}
+                      alt="Imagen seleccionada"
+                      className="mx-auto h-40 object-contain p-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImagenUrl("")}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-xs text-white hover:bg-red-500"
+                      aria-label="Quitar imagen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-28 items-center justify-center rounded-lg border-2 border-dashed border-line bg-surface-2 text-sm text-muted">
+                    Sin imagen
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setGaleriaAbierta(true); cargarGaleria(); }}
+                    className="flex min-h-[40px] flex-1 items-center justify-center gap-2 rounded-md border border-line bg-surface-2 text-sm font-medium text-white transition-colors hover:border-red-500 hover:bg-red-500/10"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
+                    Galería
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={subiendoArchivo}
+                    className="flex min-h-[40px] flex-1 items-center justify-center gap-2 rounded-md border border-line bg-surface-2 text-sm font-medium text-white transition-colors hover:border-red-500 hover:bg-red-500/10 disabled:opacity-40"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
+                    {subiendoArchivo ? "Subiendo…" : "Subir foto"}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) subirArchivo(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
                 {errores.imagenUrl && <span className="text-xs text-red-500">{errores.imagenUrl}</span>}
-              </label>
+              </div>
+
+              {/* ── Galería modal ────────────────────── */}
+              <AnimatePresence>
+                {galeriaAbierta && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                    onClick={() => setGaleriaAbierta(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="relative mx-4 max-h-[80dvh] w-full max-w-2xl overflow-y-auto rounded-xl border border-line bg-[#111] p-5 shadow-2xl"
+                    >
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="font-display text-lg font-bold uppercase text-white">
+                          Elegir imagen del estudio
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setGaleriaAbierta(false)}
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-muted hover:text-white"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      {cargandoGaleria ? (
+                        <div className="flex h-40 items-center justify-center">
+                          <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-red-500" />
+                        </div>
+                      ) : imagenesGaleria.length === 0 ? (
+                        <p className="py-12 text-center text-sm text-muted">
+                          No hay imágenes en el estudio. Procesa una foto en la sección &quot;Fotos&quot; primero.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                          {imagenesGaleria.map((img) => (
+                            <button
+                              key={img.nombre}
+                              type="button"
+                              onClick={() => { setImagenUrl(img.url); setGaleriaAbierta(false); }}
+                              className={`group relative aspect-square overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                                imagenUrl === img.url
+                                  ? "border-red-500 ring-2 ring-red-500/30"
+                                  : "border-transparent hover:border-white/30"
+                              }`}
+                            >
+                              <img
+                                src={img.url}
+                                alt={img.nombre}
+                                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                loading="lazy"
+                              />
+                              {imagenUrl === img.url && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                                  <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">Actual</span>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Usos */}
               <div>
