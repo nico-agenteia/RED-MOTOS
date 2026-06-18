@@ -46,7 +46,10 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[aplicar-plantilla] Error componiendo:", err);
     return NextResponse.json(
-      { error: "No se pudo componer la plantilla" },
+      {
+        error: "No se pudo componer la plantilla",
+        detalle: err instanceof Error ? err.message : String(err),
+      },
       { status: 500 },
     );
   }
