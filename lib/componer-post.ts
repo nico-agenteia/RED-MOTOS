@@ -1,19 +1,23 @@
 // Composición del post de Instagram a partir del buffer de una imagen de moto.
-// Centraliza la lectura de assets (fuentes + logos desde public/ vía filesystem)
-// y la llamada a Satori, para que tanto kie-status (flujo automático) como
-// /api/aplicar-plantilla (re-aplicar sin gastar KIE) usen la misma lógica.
+// Las fuentes (Oswald) y los logos (Red Motos + marcas) van EMBEBIDOS en el
+// bundle (lib/assets-marca.ts, base64) en vez de leerse de public/ con
+// readFileSync. Así la plantilla funciona en cualquier entorno serverless
+// (Vercel, Netlify, etc.) sin depender de outputFileTracing ni del filesystem.
+// Para regenerar los assets embebidos: npx tsx _gen-assets.mts
 
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
 import { renderPostInstagram } from "./post-instagram";
+import {
+  FONT_BOLD_B64,
+  FONT_MEDIUM_B64,
+  LOGO_PRINCIPAL_B64,
+  MARCA_LOGOS_B64,
+} from "./assets-marca";
 
-const ARCHIVOS_MARCA = [
-  "logo-royal-enfield",
-  "logo-suzuki",
-  "logo-kymco",
-  "logo-cyclone",
-  "logo-zonsen",
-];
+/** base64 → ArrayBuffer (para las fuentes que Satori recibe como ArrayBuffer). */
+function b64ToArrayBuffer(b64: string): ArrayBuffer {
+  const buf = Buffer.from(b64, "base64");
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+}
 
 /**
  * Compone el post de Instagram (1080×1080) sobre la moto recibida.
@@ -22,14 +26,6 @@ const ARCHIVOS_MARCA = [
  */
 export async function componerPostInstagram(imagenBuffer: Buffer): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
-  const publicDir = join(process.cwd(), "public");
-
-  const fileToPngDataUri = async (filePath: string): Promise<string | null> => {
-    if (!existsSync(filePath)) return null;
-    const buf = readFileSync(filePath);
-    const png = await sharp(buf).png().toBuffer();
-    return `data:image/png;base64,${png.toString("base64")}`;
-  };
 
   // Moto cuadrada como fondo del post.
   const motoPng = await sharp(imagenBuffer)
@@ -38,33 +34,17 @@ export async function componerPostInstagram(imagenBuffer: Buffer): Promise<Buffe
     .toBuffer();
   const motoDataUri = `data:image/png;base64,${motoPng.toString("base64")}`;
 
-  const logoDataUri = await fileToPngDataUri(
-    join(publicDir, "logos", "red-motos-logo.webp"),
-  );
-
-  const marcaLogos: string[] = [];
-  for (const f of ARCHIVOS_MARCA) {
-    const uri = await fileToPngDataUri(join(publicDir, "logos", `${f}.webp`));
-    if (uri) marcaLogos.push(uri);
-  }
-
-  const fontBoldBuf = readFileSync(join(publicDir, "fonts", "Oswald-700.ttf"));
-  const fontMediumBuf = readFileSync(join(publicDir, "fonts", "Oswald-500.ttf"));
-  const fontBold = fontBoldBuf.buffer.slice(
-    fontBoldBuf.byteOffset,
-    fontBoldBuf.byteOffset + fontBoldBuf.byteLength,
-  );
-  const fontMedium = fontMediumBuf.buffer.slice(
-    fontMediumBuf.byteOffset,
-    fontMediumBuf.byteOffset + fontMediumBuf.byteLength,
-  );
+  const logoDataUri = LOGO_PRINCIPAL_B64
+    ? `data:image/png;base64,${LOGO_PRINCIPAL_B64}`
+    : null;
+  const marcaLogos = MARCA_LOGOS_B64.map((b64) => `data:image/png;base64,${b64}`);
 
   const svg = await renderPostInstagram({
     motoDataUri,
     logoDataUri,
     marcaLogos,
-    fontBold,
-    fontMedium,
+    fontBold: b64ToArrayBuffer(FONT_BOLD_B64),
+    fontMedium: b64ToArrayBuffer(FONT_MEDIUM_B64),
   });
 
   return sharp(Buffer.from(svg)).webp({ quality: 88 }).toBuffer();
