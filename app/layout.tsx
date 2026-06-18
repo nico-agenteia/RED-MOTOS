@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "Red Motos Chile | Concesionario Oficial Royal Enfield y Suzuki en Santiago",
   description:
     `Venta de motos nuevas en Santiago. Punto oficial Royal Enfield y Suzuki. ` +
-    `8 marcas, financiamiento en el acto. Visítanos en ${SUCURSALES[0].direccion}.`,
+    `5 marcas, financiamiento en el acto. Visítanos en ${SUCURSALES[0].direccion}.`,
   keywords: [
     "motos Santiago",
     "Royal Enfield Chile",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Red Motos Chile | Punto Oficial Royal Enfield y Suzuki",
     description:
-      "Concesionario multimarca en Santiago. 8 marcas oficiales, financiamiento en minutos y postventa en todo Chile.",
+      "Concesionario multimarca en Santiago. 5 marcas oficiales, financiamiento en minutos y postventa en todo Chile.",
     url: NEGOCIO.web,
     siteName: NEGOCIO.nombreLargo,
     images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Red Motos Chile | Punto Oficial Royal Enfield y Suzuki",
     description:
-      "Concesionario multimarca en Santiago. 8 marcas oficiales y financiamiento en minutos.",
+      "Concesionario multimarca en Santiago. 5 marcas oficiales y financiamiento en minutos.",
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },

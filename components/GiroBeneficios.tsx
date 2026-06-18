@@ -11,7 +11,7 @@ const BENEFICIOS = [
   { num: "02", titulo: "POSTVENTA EN CHILE", desc: "Servicio técnico y repuestos asegurados." },
   { num: "03", titulo: "FINANCIAMIENTO EN EL ACTO", desc: "Aprobación rápida, cuotas a tu medida." },
   { num: "04", titulo: "PUNTO OFICIAL RE", desc: "Concesionario autorizado en Santiago." },
-  { num: "05", titulo: "8 MARCAS OFICIALES", desc: "Royal Enfield, Suzuki y más bajo un techo." },
+  { num: "05", titulo: "5 MARCAS OFICIALES", desc: "Royal Enfield, Suzuki y más bajo un techo." },
   { num: "06", titulo: "3 SUCURSALES", desc: "La Florida, La Cisterna y Casa Matriz." },
 ] as const;
 

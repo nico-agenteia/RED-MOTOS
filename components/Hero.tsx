@@ -33,7 +33,7 @@ const { count: TOTAL_FRAMES, framePath } = frames360(SLUG);
 /** Titulares que aparecen en ángulos clave (rango de progreso 0–1). */
 const TITULARES = [
   { desde: 0.02, hasta: 0.24, texto: "Mueve tu mundo", sub: "tu próxima moto te espera" },
-  { desde: 0.36, hasta: 0.58, texto: "8 marcas oficiales", sub: "una sola curaduría" },
+  { desde: 0.36, hasta: 0.58, texto: "5 marcas oficiales", sub: "una sola curaduría" },
   { desde: 0.7, hasta: 0.92, texto: "Punto oficial", sub: "Royal Enfield" },
 ];
 

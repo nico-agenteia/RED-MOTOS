@@ -243,6 +243,17 @@ export default function Contacto() {
         <p className="label-mono mt-10 text-center !text-[10px]">
           © 2026 Red Motos Chile · Todos los derechos reservados
         </p>
+        <p className="label-mono mt-2 text-center !text-[10px] opacity-70">
+          Proyecto realizado por{" "}
+          <a
+            href="https://diagnostico-nico-agenteia.netlify.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline transition-opacity hover:opacity-100"
+          >
+            Sistemas y Automatizaciones Nexo SpA
+          </a>
+        </p>
       </footer>
     </section>
   );
