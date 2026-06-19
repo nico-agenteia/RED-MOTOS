@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FONDOS_MARCA, MARCAS_FONDO } from "@/lib/marca-fondos";
 import type { Marca } from "@/lib/tipos";
@@ -12,6 +12,9 @@ import type { Marca } from "@/lib/tipos";
 type Estilo = "catalogo" | "redes";
 
 const POLL_MS = 3000;
+// Tope de polling: ~2 min (40 × 3 s). Si KIE no termina en ese plazo, cortamos
+// y mostramos un error en vez de dejar el spinner girando para siempre.
+const MAX_INTENTOS = 40;
 
 interface EstudioFotosProps {
   onGuardarEnCatalogo?: (imagenUrl: string) => void;
@@ -20,6 +23,21 @@ interface EstudioFotosProps {
 export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps = {}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intentosRef = useRef(0);
+
+  /** Detiene el polling activo (si lo hay) y resetea el contador de intentos. */
+  function detenerPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    intentosRef.current = 0;
+  }
+
+  // Al desmontar (p. ej. cambiar de sección del dashboard), cortar cualquier
+  // polling activo para no dejar fetches huérfanos ni setState sobre un
+  // componente desmontado.
+  useEffect(() => detenerPolling, []);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [estilo, setEstilo] = useState<Estilo>("catalogo");
@@ -112,23 +130,37 @@ export default function EstudioFotos({ onGuardarEnCatalogo }: EstudioFotosProps 
         return;
       }
 
-      // Polling cada 3s al estado de la tarea (patrón async kie.ai).
+      // Polling cada 3s al estado de la tarea (patrón async kie.ai), con tope de
+      // intentos para no quedar girando si KIE nunca termina.
       const taskId: string = datos.taskId;
+      detenerPolling();
       pollRef.current = setInterval(async () => {
-        const estadoRes = await fetch(
-          `/api/kie-status?taskId=${encodeURIComponent(taskId)}&estilo=${encodeURIComponent(estilo)}`,
-        );
-        const estado = await estadoRes.json().catch(() => null);
-        if (!estadoRes.ok) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setError(estado?.error ?? "Error consultando el estado");
+        if (intentosRef.current >= MAX_INTENTOS) {
+          detenerPolling();
+          setError("La generación tardó demasiado. Intenta de nuevo en un momento.");
           setProcesando(false);
           return;
         }
-        if (estado?.estado === "listo") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setResultadoUrl(estado.imagenUrl);
-          setProcesando(false);
+        intentosRef.current += 1;
+        try {
+          const estadoRes = await fetch(
+            `/api/kie-status?taskId=${encodeURIComponent(taskId)}&estilo=${encodeURIComponent(estilo)}`,
+          );
+          const estado = await estadoRes.json().catch(() => null);
+          if (!estadoRes.ok) {
+            detenerPolling();
+            setError(estado?.error ?? "Error consultando el estado");
+            setProcesando(false);
+            return;
+          }
+          if (estado?.estado === "listo") {
+            detenerPolling();
+            setResultadoUrl(estado.imagenUrl);
+            setProcesando(false);
+          }
+        } catch {
+          // Error de red puntual: no cortamos el polling, dejamos que el próximo
+          // intento reintente. El tope de MAX_INTENTOS evita el bucle infinito.
         }
       }, POLL_MS);
     } catch {
