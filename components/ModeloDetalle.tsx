@@ -623,6 +623,7 @@ export default function ModeloDetalle({ moto }: { moto: Moto }) {
                 precio={precioVigente(moto)}
                 modeloNombre={moto.modelo}
                 marcaNombre={moto.marca}
+                motoId={moto.id}
               />
             </motion.div>
           </div>

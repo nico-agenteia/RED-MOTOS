@@ -73,13 +73,13 @@ export async function obtenerConfigSpider(
 const MOTO_HOMOLOGACION = { marca: "Royal Enfield", modelo: "Meteor 350" } as const;
 
 /**
- * Códigos del vehículo para prellenar el iFrame de Araña (Opción A, Fase 2).
- * El manual NO trae catálogo de códigos marca/modelo: entrega estos ejemplos de
- * QA (motos) para cablear y probar el flujo. ⚠️ PROD: reemplazar por los códigos
- * reales que Autofin asigne al catálogo de Red Motos. Son números globales del
+ * Código de vehículo por DEFECTO para prellenar el iFrame de Araña (Opción A).
+ * Es el fallback de homologación (Royal Enfield Meteor 350) cuando la moto
+ * elegida no está mapeada; el simulador usa el código real por moto desde
+ * lib/autofin-codigos.ts (catálogo Autofin jun-2026). Son números globales del
  * maestro Autofin, no secretos (viajan en el src del iFrame).
  */
-const IFRAME_MOTO_QA = { brand: 52, model: 178, year: 2024 } as const;
+const IFRAME_MOTO_DEFAULT = { brand: 160, model: 10011, year: 2024 } as const;
 
 /** Seguros tal como los espera el body de CUOTA-TRINIDAD (8 llaves canónicas). */
 export interface SegurosMoto {
@@ -207,7 +207,7 @@ export async function obtenerOpcionesMoto(
       spiderUrl:
         process.env.AUTOFIN_SPIDER_URL ?? "https://spiderqa.autofin.cl",
       codSpider: cod,
-      ...IFRAME_MOTO_QA,
+      ...IFRAME_MOTO_DEFAULT,
     },
   };
 }

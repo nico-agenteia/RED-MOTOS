@@ -7,6 +7,7 @@ import { cuotaFrancesa, formatCLP } from "@/lib/utils";
 import { linkWhatsApp, TASA_MENSUAL_REFERENCIAL } from "@/lib/config";
 import type { OpcionesMoto, ResultadoCuota } from "@/lib/autofin";
 import type { Moto } from "@/lib/tipos";
+import { codigosAutofin } from "@/lib/autofin-codigos";
 import ModalSolicitud from "@/components/ModalSolicitud";
 
 const PLAZOS_FALLBACK = [12, 18, 24, 36, 48];
@@ -187,12 +188,14 @@ export default function SimuladorCuotas() {
     } catch { /* sin leadId igual abrimos */ }
 
     const { spiderUrl, codSpider, brand, model, year } = opciones.iframe;
+    // Códigos de la moto elegida; si no está mapeada, usa el de homologación.
+    const codigos = motoSeleccionada ? codigosAutofin(motoSeleccionada) : null;
     const params = new URLSearchParams({
       businessType: "2",
       vehicleStatus: "1",
       isMoto: "true",
-      brand: String(brand),
-      model: String(model),
+      brand: String(codigos?.brand ?? brand),
+      model: String(codigos?.model ?? model),
       year: String(year),
       price: String(valor),
     });

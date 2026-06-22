@@ -6,6 +6,8 @@ import gsap from "gsap";
 import { cuotaFrancesa, formatCLP } from "@/lib/utils";
 import { linkWhatsApp, TASA_MENSUAL_REFERENCIAL } from "@/lib/config";
 import type { OpcionesMoto, ResultadoCuota } from "@/lib/autofin";
+import type { Marca } from "@/lib/tipos";
+import { codigosAutofin } from "@/lib/autofin-codigos";
 import ModalSolicitud from "@/components/ModalSolicitud";
 
 const PLAZOS_FALLBACK = [12, 18, 24, 36, 48];
@@ -22,9 +24,11 @@ interface Props {
   precio: number;
   modeloNombre: string;
   marcaNombre: string;
+  /** id de la moto del catálogo, para homologar el iFrame con su código Autofin. */
+  motoId?: string;
 }
 
-export default function SimuladorInline({ precio, modeloNombre, marcaNombre }: Props) {
+export default function SimuladorInline({ precio, modeloNombre, marcaNombre, motoId }: Props) {
   const [opciones, setOpciones] = useState<OpcionesMoto | null>(null);
   const [piePct, setPiePct] = useState(30);
   const [plazo, setPlazo] = useState(24);
@@ -166,12 +170,16 @@ export default function SimuladorInline({ precio, modeloNombre, marcaNombre }: P
     } catch { /* sin leadId igual abrimos el iFrame */ }
 
     const { spiderUrl, codSpider, brand, model, year } = opciones.iframe;
+    // Código de esta moto; si no está mapeada, usa el de homologación del server.
+    const codigos = motoId
+      ? codigosAutofin({ id: motoId, marca: marcaNombre as Marca })
+      : null;
     const params = new URLSearchParams({
       businessType: "2",
       vehicleStatus: "1",
       isMoto: "true",
-      brand: String(brand),
-      model: String(model),
+      brand: String(codigos?.brand ?? brand),
+      model: String(codigos?.model ?? model),
       year: String(year),
       price: String(precio),
     });
