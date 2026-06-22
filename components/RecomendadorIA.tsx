@@ -1,65 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  RANGOS_PRESUPUESTO,
-  recomendarMoto,
-  scoreLead,
-  EMOJI_SCORE,
-  formatCLP,
-} from "@/lib/utils";
-import { precioVigente } from "@/lib/catalogo";
+import { formatCLP } from "@/lib/utils";
+import { CATALOGO, precioVigente } from "@/lib/catalogo";
 import { linkWhatsApp } from "@/lib/config";
-import type { Uso, Experiencia, Moto } from "@/lib/tipos";
+import type { Moto } from "@/lib/tipos";
 
-// TODO: conectar con /api/recomendar (Claude Haiku) — hoy la recomendación
-// usa la lógica local de lib/utils.ts (presupuesto + uso + experiencia).
+// Asistente conversacional con Claude (/api/recomendar). Responde preguntas
+// frecuentes, recomienda motos reales del stock y captura el lead.
 
-const USOS: Uso[] = ["Ciudad", "Ruta", "Off-road", "Trabajo", "Placer"];
-const EXPERIENCIAS: Experiencia[] = [
-  "Primera moto",
-  "Algo de experiencia",
-  "Experimentado",
-];
-const URGENCIAS = [
-  "Esta semana",
-  "Este mes",
-  "En 3 meses",
-  "Solo mirando",
-] as const;
-
-const slideStep = {
-  initial: { opacity: 0, x: 40 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -40 },
-  transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const },
-};
-
-function Chip({
-  activo,
-  onClick,
-  children,
-}: {
-  activo: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={activo}
-      className={`min-h-[44px] rounded-full border px-4 text-sm font-medium transition-colors duration-200 ${
-        activo
-          ? "border-red-500 bg-red-500 text-white"
-          : "border-line bg-surface-2 text-muted hover:border-white/25 hover:text-white"
-      }`}
-    >
-      {children}
-    </button>
-  );
+interface Mensaje {
+  role: "user" | "assistant";
+  content: string;
 }
+
+const SALUDO: Mensaje = {
+  role: "assistant",
+  content:
+    "¡Hola! 👋 Soy el asistente de Red Motos. Cuéntame qué andas buscando y te ayudo a encontrar tu moto ideal. Para partir: ¿más o menos cuánto piensas invertir?",
+};
 
 function avisarEstado(abierto: boolean) {
   window.dispatchEvent(
@@ -67,20 +27,29 @@ function avisarEstado(abierto: boolean) {
   );
 }
 
+/** Busca en el catálogo la moto que el agente recomendó (texto libre). */
+function motoDesdeTexto(texto: string | null): Moto | null {
+  if (!texto) return null;
+  const t = texto.toLowerCase();
+  return (
+    CATALOGO.find((m) => t.includes(m.id.toLowerCase())) ??
+    CATALOGO.find((m) => t.includes(m.modelo.toLowerCase())) ??
+    null
+  );
+}
+
 export default function RecomendadorIA() {
   const [abierto, setAbierto] = useState(false);
   const [botonVisible, setBotonVisible] = useState(false);
-  const [paso, setPaso] = useState(1);
 
-  const [presupuesto, setPresupuesto] = useState<string | null>(null);
-  const [uso, setUso] = useState<Uso | null>(null);
-  const [experiencia, setExperiencia] = useState<Experiencia | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [urgencia, setUrgencia] = useState<(typeof URGENCIAS)[number] | null>(
-    null,
-  );
-  const [recomendada, setRecomendada] = useState<Moto | null>(null);
+  const [mensajes, setMensajes] = useState<Mensaje[]>([SALUDO]);
+  const [input, setInput] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [leadId, setLeadId] = useState<string | null>(null);
+  const [modeloRecomendado, setModeloRecomendado] = useState<string | null>(null);
+
+  const finRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // El asistente flotante aparece cuando el hero sale del viewport.
   useEffect(() => {
@@ -97,7 +66,7 @@ export default function RecomendadorIA() {
     return () => observer.disconnect();
   }, []);
 
-  // Abrir desde el CTA del hero ("Encuentra tu moto").
+  // Abrir desde el CTA del hero o el pop-up ("rm:abrir-recomendador").
   useEffect(() => {
     const abrir = () => {
       setAbierto(true);
@@ -106,6 +75,16 @@ export default function RecomendadorIA() {
     window.addEventListener("rm:abrir-recomendador", abrir);
     return () => window.removeEventListener("rm:abrir-recomendador", abrir);
   }, []);
+
+  // Autoscroll al último mensaje.
+  useEffect(() => {
+    if (abierto) finRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensajes, enviando, abierto]);
+
+  // Focus al abrir.
+  useEffect(() => {
+    if (abierto) setTimeout(() => inputRef.current?.focus(), 200);
+  }, [abierto]);
 
   function abrirAsistente() {
     setAbierto(true);
@@ -117,61 +96,65 @@ export default function RecomendadorIA() {
     avisarEstado(false);
   }
 
-  function reiniciar() {
-    setPaso(1);
-    setPresupuesto(null);
-    setUso(null);
-    setExperiencia(null);
-    setNombre("");
-    setWhatsapp("");
-    setUrgencia(null);
-    setRecomendada(null);
+  async function enviar() {
+    const texto = input.trim();
+    if (!texto || enviando) return;
+
+    const nuevos: Mensaje[] = [...mensajes, { role: "user", content: texto }];
+    setMensajes(nuevos);
+    setInput("");
+    setEnviando(true);
+
+    try {
+      const res = await fetch("/api/recomendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // El saludo inicial es de UI; no se manda al modelo.
+          messages: nuevos.filter((m, i) => !(i === 0 && m === SALUDO)),
+          leadId,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.leadId) setLeadId(data.leadId);
+      if (data.modeloRecomendado) setModeloRecomendado(data.modeloRecomendado);
+      setMensajes((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            data.reply ??
+            "Perdona, tuve un problema. Escríbenos por WhatsApp y te ayudamos 🙌",
+        },
+      ]);
+    } catch {
+      setMensajes((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Se me cayó la conexión 😅. ¿Lo intentamos de nuevo o prefieres escribirnos por WhatsApp?",
+        },
+      ]);
+    } finally {
+      setEnviando(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
   }
 
-  function calcularResultado() {
-    if (!presupuesto || !uso || !experiencia) return;
-    const moto = recomendarMoto(presupuesto, uso, experiencia);
-    setRecomendada(moto);
-    setPaso(5);
-
-    // Capturar lead en segundo plano (no bloquear la UX)
-    void fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        origen: "recomendador",
-        nombre: nombre.trim() || undefined,
-        whatsapp: whatsapp.trim() || undefined,
-        presupuesto,
-        uso,
-        experiencia,
-        urgencia: urgencia ?? undefined,
-        score: urgencia ? scoreLead(urgencia) : "cold",
-        payload: { modeloRecomendado: moto ? `${moto.marca} ${moto.modelo}` : null },
-      }),
-    }).catch(() => {/* silencioso — no interrumpir el flujo */});
-  }
-
-  const score = urgencia ? scoreLead(urgencia) : "cold";
-
-  const mensajeWsp =
-    recomendada && uso && presupuesto
-      ? `Hola! Me llamo ${nombre || "—"}, busco una moto para ${uso.toLowerCase()}, presupuesto ${presupuesto}. Me recomendaron la ${recomendada.marca} ${recomendada.modelo}. ¿Pueden atenderme? ${EMOJI_SCORE[score]}`
-      : "";
-
-  const puedeAvanzar4 =
-    nombre.trim().length > 1 && whatsapp.trim().length >= 8 && urgencia !== null;
+  const motoCard = motoDesdeTexto(modeloRecomendado);
 
   return (
     <>
       {/* ── Sección ancla en la página ─────────────────────────────── */}
       <section
         id="recomendador"
-        aria-label="Recomendador de motos con IA"
+        aria-label="Asistente de motos con IA"
         className="bg-surface py-24"
       >
         <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
-          <p className="label-mono mb-3">IA Recomendador</p>
+          <p className="label-mono mb-3">Asistente IA</p>
           <h2
             className="headline-display text-white"
             style={{ fontSize: "clamp(40px, 6vw, 72px)" }}
@@ -179,8 +162,8 @@ export default function RecomendadorIA() {
             Encuentra tu moto
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
-            Responde 3 preguntas y te decimos exactamente qué moto del stock
-            real te conviene — sin vueltas, sin parálisis de decisión.
+            Conversa con nuestro asistente: te ayuda a elegir, responde tus dudas
+            y te conecta con un vendedor — como hablar con alguien de la tienda.
           </p>
           <motion.button
             type="button"
@@ -190,7 +173,7 @@ export default function RecomendadorIA() {
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className="mt-8 inline-flex min-h-[48px] items-center rounded-md bg-red-500 px-8 text-base font-semibold text-white transition-colors duration-200 hover:bg-red-600"
           >
-            Empezar ahora
+            Hablar con el asistente
           </motion.button>
         </div>
       </section>
@@ -244,23 +227,17 @@ export default function RecomendadorIA() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 80 }}
               transition={{ type: "spring", stiffness: 400, damping: 38 }}
-              className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-xl border border-line bg-surface p-6 shadow-[0_-12px_48px_rgba(0,0,0,0.6)] md:inset-x-auto md:bottom-6 md:right-6 md:w-[380px] md:rounded-xl md:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+              className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-xl border border-line bg-surface shadow-[0_-12px_48px_rgba(0,0,0,0.6)] md:inset-x-auto md:bottom-6 md:right-6 md:h-[600px] md:max-h-[85dvh] md:w-[400px] md:rounded-xl md:shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
             >
-              {/* Header del asistente */}
-              <div className="mb-5 flex items-center justify-between">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-line p-4">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 font-display text-base font-extrabold text-white">
                     R
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-white">
-                      Encuentra tu moto
-                    </p>
-                    {paso <= 4 && (
-                      <p className="label-mono !text-[10px]">
-                        Paso {paso} de 4
-                      </p>
-                    )}
+                    <p className="text-sm font-semibold text-white">Asistente · Red Motos</p>
+                    <p className="label-mono !text-[10px] !text-green-400">En línea</p>
                   </div>
                 </div>
                 <button
@@ -283,210 +260,114 @@ export default function RecomendadorIA() {
                 </button>
               </div>
 
-              <AnimatePresence mode="wait">
-                {paso === 1 && (
-                  <motion.div key="paso-1" {...slideStep}>
-                    <p className="mb-4 text-base font-medium text-white">
-                      ¿Cuánto quieres invertir?
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {RANGOS_PRESUPUESTO.map((r) => (
-                        <Chip
-                          key={r.etiqueta}
-                          activo={presupuesto === r.etiqueta}
-                          onClick={() => {
-                            setPresupuesto(r.etiqueta);
-                            setPaso(2);
-                          }}
-                        >
-                          {r.etiqueta}
-                        </Chip>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {paso === 2 && (
-                  <motion.div key="paso-2" {...slideStep}>
-                    <p className="mb-4 text-base font-medium text-white">
-                      ¿Para qué la usarás?
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {USOS.map((u) => (
-                        <Chip
-                          key={u}
-                          activo={uso === u}
-                          onClick={() => {
-                            setUso(u);
-                            setPaso(3);
-                          }}
-                        >
-                          {u}
-                        </Chip>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setPaso(1)}
-                      className="label-mono mt-5 !text-[11px] transition-colors hover:!text-white"
+              {/* Mensajes */}
+              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                {mensajes.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
+                        m.role === "user"
+                          ? "rounded-br-sm bg-red-500 text-white"
+                          : "rounded-bl-sm bg-surface-2 text-white"
+                      }`}
                     >
-                      ← Volver
-                    </button>
-                  </motion.div>
-                )}
-
-                {paso === 3 && (
-                  <motion.div key="paso-3" {...slideStep}>
-                    <p className="mb-4 text-base font-medium text-white">
-                      ¿Cuánta experiencia tienes?
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {EXPERIENCIAS.map((e) => (
-                        <Chip
-                          key={e}
-                          activo={experiencia === e}
-                          onClick={() => {
-                            setExperiencia(e);
-                            setPaso(4);
-                          }}
-                        >
-                          {e}
-                        </Chip>
-                      ))}
+                      {m.content}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setPaso(2)}
-                      className="label-mono mt-5 !text-[11px] transition-colors hover:!text-white"
-                    >
-                      ← Volver
-                    </button>
-                  </motion.div>
-                )}
+                  </div>
+                ))}
 
-                {paso === 4 && (
-                  <motion.div key="paso-4" {...slideStep}>
-                    <p className="mb-4 text-base font-medium text-white">
-                      Último paso: ¿a quién le mandamos la recomendación?
-                    </p>
-                    <div className="flex flex-col gap-3">
-                      <label className="flex flex-col gap-1">
-                        <span className="label-mono !text-[11px]">Nombre</span>
-                        <input
-                          type="text"
-                          value={nombre}
-                          onChange={(e) => setNombre(e.target.value)}
-                          autoComplete="name"
-                          placeholder="Tu nombre"
-                          className="min-h-[44px] rounded-md border border-line bg-surface-2 px-4 text-sm text-white placeholder:text-muted/60 focus:border-red-500 focus:outline-none"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1">
-                        <span className="label-mono !text-[11px]">
-                          WhatsApp
-                        </span>
-                        <input
-                          type="tel"
-                          value={whatsapp}
-                          onChange={(e) => setWhatsapp(e.target.value)}
-                          autoComplete="tel"
-                          placeholder="+56 9 ..."
-                          className="min-h-[44px] rounded-md border border-line bg-surface-2 px-4 text-sm text-white placeholder:text-muted/60 focus:border-red-500 focus:outline-none"
-                        />
-                      </label>
-                      <p className="mt-1 text-sm font-medium text-white">
-                        ¿Cuándo planeas comprar?
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {URGENCIAS.map((u) => (
-                          <Chip
-                            key={u}
-                            activo={urgencia === u}
-                            onClick={() => setUrgencia(u)}
-                          >
-                            {u}
-                          </Chip>
-                        ))}
-                      </div>
+                {/* Card de moto recomendada */}
+                {motoCard && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="overflow-hidden rounded-lg border border-line bg-surface-2"
+                  >
+                    <div className="flex aspect-[16/10] items-center justify-center bg-black">
+                      <img
+                        src={motoCard.img}
+                        alt={`${motoCard.marca} ${motoCard.modelo}`}
+                        loading="lazy"
+                        className="h-full w-full object-contain p-3"
+                      />
                     </div>
-                    <div className="mt-5 flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setPaso(3)}
-                        className="label-mono !text-[11px] transition-colors hover:!text-white"
-                      >
-                        ← Volver
-                      </button>
-                      <motion.button
-                        type="button"
-                        disabled={!puedeAvanzar4}
-                        onClick={calcularResultado}
-                        whileTap={{ scale: 0.97 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 25,
-                        }}
-                        className="inline-flex min-h-[44px] items-center rounded-md bg-red-500 px-6 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Ver mi moto →
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {paso === 5 && recomendada && (
-                  <motion.div key="paso-5" {...slideStep}>
-                    <p className="label-mono mb-3 !text-[11px]">
-                      Tu recomendación {EMOJI_SCORE[score]}
-                    </p>
-                    <div className="overflow-hidden rounded-lg border border-line bg-surface-2">
-                      <div className="flex aspect-[4/3] items-center justify-center bg-black">
-                        <img
-                          src={recomendada.img}
-                          alt={`${recomendada.marca} ${recomendada.modelo}`}
-                          width={340}
-                          height={255}
-                          loading="lazy"
-                          className="h-full w-full object-contain p-4"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <p className="label-mono !text-[10px]">
-                          {recomendada.marca}
+                    <div className="flex items-center justify-between gap-3 p-3">
+                      <div>
+                        <p className="label-mono !text-[10px]">{motoCard.marca}</p>
+                        <p className="font-display text-base font-bold uppercase text-white">
+                          {motoCard.modelo}
                         </p>
-                        <h3 className="font-display text-xl font-bold uppercase text-white">
-                          {recomendada.modelo}
-                        </h3>
-                        <p className="mt-1 font-display text-2xl font-extrabold text-red-500">
-                          {formatCLP(precioVigente(recomendada))}
+                        <p className="font-display text-lg font-extrabold text-red-500">
+                          {formatCLP(precioVigente(motoCard))}
                         </p>
                       </div>
+                      <a
+                        href={linkWhatsApp(
+                          `Hola! Me interesa la ${motoCard.marca} ${motoCard.modelo}. ¿Me pueden cotizar?`,
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-[40px] shrink-0 items-center rounded-md bg-wsp px-4 text-xs font-semibold text-black transition-opacity hover:opacity-90"
+                      >
+                        Cotizar
+                      </a>
                     </div>
-                    <motion.a
-                      href={linkWhatsApp(mensajeWsp)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      whileTap={{ scale: 0.97 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 25,
-                      }}
-                      className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-md bg-wsp text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90"
-                    >
-                      Cotizarla por WhatsApp
-                    </motion.a>
-                    <button
-                      type="button"
-                      onClick={reiniciar}
-                      className="label-mono mt-4 !text-[11px] transition-colors hover:!text-white"
-                    >
-                      ↺ Empezar de nuevo
-                    </button>
                   </motion.div>
                 )}
-              </AnimatePresence>
+
+                {/* Indicador "escribiendo…" */}
+                {enviando && (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-surface-2 px-4 py-3">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted [animation-delay:-0.2s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted [animation-delay:-0.1s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-muted" />
+                    </div>
+                  </div>
+                )}
+                <div ref={finRef} />
+              </div>
+
+              {/* Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  enviar();
+                }}
+                className="flex items-center gap-2 border-t border-line p-3"
+              >
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  maxLength={500}
+                  placeholder="Escribe tu mensaje…"
+                  className="min-h-[44px] flex-1 rounded-full border border-line bg-surface-2 px-4 text-sm text-white placeholder:text-muted/60 focus:border-red-500 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || enviando}
+                  aria-label="Enviar mensaje"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-500 text-white transition-colors duration-200 hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </button>
+              </form>
             </motion.div>
           </>
         )}

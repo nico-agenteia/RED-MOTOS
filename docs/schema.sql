@@ -107,6 +107,86 @@ create table if not exists ia_tareas (
   creado_en   timestamptz default now()
 );
 
+-- ─── Citas de servicio (Reparaciones y Mantenimiento) ────────────────────────
+-- Agenda en tiempo real: la disponibilidad se calcula desde el horario menos
+-- las citas no canceladas. Mantenimiento agenda un slot; Reparación puede dejar
+-- solo datos (fecha/hora null) para que un vendedor cotice.
+create table if not exists citas (
+  id              uuid primary key default gen_random_uuid(),
+  tipo            text not null,              -- 'Mantenimiento' | 'Reparación'
+  nombre          text not null,
+  whatsapp        text not null,
+  email           text,
+  marca           text,                       -- moto del cliente (desde dropdown)
+  modelo          text,
+  descripcion     text,                       -- problema (reparación) / notas
+  precio_estimado int,                        -- estimado mantención (CLP); null en reparación
+  fecha           date,                       -- slot agendado (null = solo dejó datos)
+  hora            text,                        -- "10:00"
+  estado          text not null default 'pendiente', -- pendiente|confirmada|cancelada|completada
+  lead_id         uuid,
+  atendido        boolean default false,
+  creado_en       timestamptz default now(),
+  actualizado_en  timestamptz default now()
+);
+
+-- Evita doble reserva del mismo slot (ignora canceladas y citas sin fecha).
+create unique index if not exists citas_slot_unico on citas (fecha, hora)
+  where fecha is not null and estado <> 'cancelada';
+create index if not exists citas_estado on citas (estado, creado_en desc);
+
+drop trigger if exists citas_actualizado_en on citas;
+create trigger citas_actualizado_en
+  before update on citas
+  for each row execute function set_actualizado_en();
+
+-- ─── CRM postventa (seguimiento de mantenciones) ─────────────────────────────
+-- El vendedor registra cada venta 0 km. El panel calcula los hitos de mantención
+-- (1/4/8/12 meses desde la compra) desde fecha_compra; el de 12m habilita la
+-- renovación (moto en parte de pago). Los boolean marcan el hito como hecho.
+create table if not exists ventas (
+  id              uuid primary key default gen_random_uuid(),
+  nombre          text not null,
+  whatsapp        text not null,
+  email           text,
+  marca           text,
+  modelo          text,
+  patente         text,
+  fecha_compra    date not null,
+  vendedor        text,
+  notas           text,
+  hito_1m         boolean default false,   -- mantención al mes
+  hito_4m         boolean default false,
+  hito_8m         boolean default false,
+  hito_12m        boolean default false,   -- 12m: opción renovación (parte de pago)
+  creado_en       timestamptz default now(),
+  actualizado_en  timestamptz default now()
+);
+
+create index if not exists ventas_fecha on ventas (fecha_compra);
+
+drop trigger if exists ventas_actualizado_en on ventas;
+create trigger ventas_actualizado_en
+  before update on ventas
+  for each row execute function set_actualizado_en();
+
+-- ─── Clientes felices (entregas co-brandeadas, alimentan "Nuestros Clientes") ──
+-- El vendedor sube la foto de la compra; el sitio la compone con el marco de
+-- marca (satori+sharp) y la guarda en el bucket `posts`. La web pública lee de
+-- aquí (con fallback a las 20 fotos estáticas si no hay registros).
+create table if not exists clientes_felices (
+  id          uuid primary key default gen_random_uuid(),
+  img_url     text not null,             -- imagen compuesta (bucket posts)
+  nombre      text,
+  marca       text,
+  modelo      text,
+  orden       int default 0,
+  activo      boolean default true,
+  creado_en   timestamptz default now()
+);
+
+create index if not exists clientes_felices_orden on clientes_felices (activo, orden);
+
 -- ─── Buckets Storage (crear en Supabase → Storage → New bucket) ───────────────
 -- catalogo   → Public (imágenes de producto, lee la web)
 -- uploads    → Private (fotos crudas del dueño, input de KIE)

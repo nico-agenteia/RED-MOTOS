@@ -6,10 +6,13 @@ import MotoForm from "./MotoForm";
 import EstudioFotos from "./EstudioFotos";
 import BandejaLeads from "./BandejaLeads";
 import BandejaSolicitudes from "./BandejaSolicitudes";
+import BandejaCitas from "./BandejaCitas";
+import CrmPostventa from "./CrmPostventa";
+import ClientesFelices from "./ClientesFelices";
 import { formatCLP } from "@/lib/utils";
 import type { Moto } from "@/lib/tipos";
 
-type Seccion = "stock" | "leads" | "solicitudes" | "fotos";
+type Seccion = "stock" | "leads" | "solicitudes" | "citas" | "crm" | "fotos";
 
 const POR_PAGINA = 8;
 
@@ -17,6 +20,8 @@ const SECCIONES: { id: Seccion; etiqueta: string; icono: string }[] = [
   { id: "stock", etiqueta: "Stock", icono: "📦" },
   { id: "leads", etiqueta: "Leads", icono: "🎯" },
   { id: "solicitudes", etiqueta: "Solicitudes", icono: "💰" },
+  { id: "citas", etiqueta: "Citas", icono: "🛠️" },
+  { id: "crm", etiqueta: "Postventa", icono: "🔁" },
   { id: "fotos", etiqueta: "Fotos", icono: "📷" },
 ];
 
@@ -438,14 +443,19 @@ export default function AdminDashboard() {
 
           {seccion === "leads" && <BandejaLeads />}
           {seccion === "solicitudes" && <BandejaSolicitudes />}
+          {seccion === "citas" && <BandejaCitas />}
+          {seccion === "crm" && <CrmPostventa />}
           {seccion === "fotos" && (
-            <EstudioFotos
-              onGuardarEnCatalogo={(url) => {
-                setMotoEditar(null);
-                setImagenUrlDesdeEstudio(url);
-                setFormAbierto(true);
-              }}
-            />
+            <>
+              <EstudioFotos
+                onGuardarEnCatalogo={(url) => {
+                  setMotoEditar(null);
+                  setImagenUrlDesdeEstudio(url);
+                  setFormAbierto(true);
+                }}
+              />
+              <ClientesFelices />
+            </>
           )}
         </main>
       </div>

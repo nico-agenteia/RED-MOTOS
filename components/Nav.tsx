@@ -11,6 +11,7 @@ import MegaMenuMotos from "./MegaMenuMotos";
 const LINKS = [
   { etiqueta: "Royal Enfield", href: "/#royal-enfield" },
   { etiqueta: "Suzuki", href: "/#suzuki" },
+  { etiqueta: "Servicios", href: "/#servicios" },
   { etiqueta: "Nosotros", href: "/#nosotros" },
   { etiqueta: "Financiamiento", href: "/#financiamiento" },
   { etiqueta: "Contacto", href: "/#contacto" },

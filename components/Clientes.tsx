@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useReveal } from "@/lib/useReveal";
+import type { ClienteFeliz } from "@/lib/tipos";
 
-// Las 20 tarjetas co-brandeadas reales rescatadas de redmotos.cl.
-const TESTIMONIOS = Array.from({ length: 20 }, (_, i) => {
+// Fallback estático: las 20 tarjetas co-brandeadas históricas (si no llegan
+// fotos desde Supabase).
+const TESTIMONIOS_FALLBACK: ClienteFeliz[] = Array.from({ length: 20 }, (_, i) => {
   const n = String(i + 1).padStart(2, "0");
   return {
-    src: `/testimonios/testimonio-${n}.jpg`,
-    alt: `Cliente real de Red Motos con su moto nueva — entrega ${n}`,
+    id: `static-${n}`,
+    imgUrl: `/testimonios/testimonio-${n}.jpg`,
+    nombre: null,
+    marca: null,
+    modelo: null,
+    orden: i,
+    activo: true,
   };
 });
 
 const AUTOPLAY_MS = 4000;
 
-export default function Clientes() {
+export default function Clientes({ fotos }: { fotos?: ClienteFeliz[] }) {
   const pistaRef = useRef<HTMLDivElement>(null);
   const headerRef = useReveal<HTMLDivElement>(".cliente-reveal", {
     y: 30,
@@ -24,6 +31,11 @@ export default function Clientes() {
   });
   const [activo, setActivo] = useState(0);
   const [pausado, setPausado] = useState(false);
+
+  const items = useMemo(
+    () => (fotos && fotos.length > 0 ? fotos : TESTIMONIOS_FALLBACK),
+    [fotos],
+  );
 
   // Drag con mouse (en touch el scroll-snap nativo ya funciona).
   const drag = useRef({ activo: false, inicioX: 0, inicioScroll: 0 });
@@ -46,11 +58,11 @@ export default function Clientes() {
     if (reducirMotion) return;
 
     const id = setInterval(() => {
-      const siguiente = (activo + 1) % TESTIMONIOS.length;
+      const siguiente = (activo + 1) % items.length;
       irA(siguiente);
     }, AUTOPLAY_MS);
     return () => clearInterval(id);
-  }, [activo, pausado]);
+  }, [activo, pausado, items.length]);
 
   // Detectar tarjeta activa según posición de scroll.
   useEffect(() => {
@@ -128,9 +140,9 @@ export default function Clientes() {
           drag.current.activo = false;
         }}
       >
-        {TESTIMONIOS.map((t, i) => (
+        {items.map((t, i) => (
           <motion.figure
-            key={t.src}
+            key={t.id}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
@@ -142,8 +154,12 @@ export default function Clientes() {
             className="w-[300px] shrink-0 select-none overflow-hidden rounded-lg shadow-[0_24px_48px_rgba(0,0,0,0.5)] md:w-[380px]"
           >
             <img
-              src={t.src}
-              alt={t.alt}
+              src={t.imgUrl}
+              alt={
+                t.nombre
+                  ? `${t.nombre} con su ${[t.marca, t.modelo].filter(Boolean).join(" ") || "moto nueva"} — Red Motos`
+                  : `Cliente real de Red Motos con su moto nueva — entrega ${i + 1}`
+              }
               width={380}
               height={480}
               loading="lazy"
@@ -160,9 +176,9 @@ export default function Clientes() {
         role="tablist"
         aria-label="Posición del carrusel"
       >
-        {TESTIMONIOS.map((t, i) => (
+        {items.map((t, i) => (
           <button
-            key={t.src}
+            key={t.id}
             type="button"
             role="tab"
             aria-selected={activo === i}

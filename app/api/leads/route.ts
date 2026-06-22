@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 import { COOKIE_SESION, esSesionValida } from "@/lib/auth";
 
 const esquemaLead = z.object({
-  origen: z.enum(["recomendador", "simulador", "contacto"]),
+  origen: z.enum(["recomendador", "simulador", "contacto", "popup", "servicio"]),
   nombre: z.string().optional(),
   whatsapp: z.string().optional(),
   presupuesto: z.string().optional(),

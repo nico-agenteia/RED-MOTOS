@@ -89,11 +89,59 @@ export interface SolicitudAutofin {
   creadoEn: string;
 }
 
+/** Cita de servicio (Reparación o Mantenimiento) agendada desde el sitio. */
+export interface Cita {
+  id: string;
+  tipo: string; // "Mantenimiento" | "Reparación"
+  nombre: string;
+  whatsapp: string;
+  email: string | null;
+  marca: string | null;
+  modelo: string | null;
+  descripcion: string | null;
+  precioEstimado: number | null;
+  fecha: string | null; // "YYYY-MM-DD"; null si solo dejó datos
+  hora: string | null; // "HH:MM"
+  estado: string; // pendiente|confirmada|cancelada|completada
+  atendido: boolean;
+  creadoEn: string;
+}
+
+/** Venta 0 km para el CRM de seguimiento de mantenciones. */
+export interface VentaPostventa {
+  id: string;
+  nombre: string;
+  whatsapp: string;
+  email: string | null;
+  marca: string | null;
+  modelo: string | null;
+  patente: string | null;
+  fechaCompra: string; // "YYYY-MM-DD"
+  vendedor: string | null;
+  notas: string | null;
+  hito1m: boolean;
+  hito4m: boolean;
+  hito8m: boolean;
+  hito12m: boolean;
+  creadoEn: string;
+}
+
+/** Entrega co-brandeada para la sección pública "Nuestros Clientes". */
+export interface ClienteFeliz {
+  id: string;
+  imgUrl: string;
+  nombre: string | null;
+  marca: string | null;
+  modelo: string | null;
+  orden: number;
+  activo: boolean;
+}
+
 export type LeadScore = "hot" | "warm" | "cold";
 
 export interface Lead {
   id: string;
-  origen: "recomendador" | "simulador" | "contacto";
+  origen: "recomendador" | "simulador" | "contacto" | "popup" | "servicio";
   nombre?: string;
   whatsapp?: string;
   presupuesto?: string;
