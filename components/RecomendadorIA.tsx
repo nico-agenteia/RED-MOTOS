@@ -111,7 +111,7 @@ export default function RecomendadorIA() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           // El saludo inicial es de UI; no se manda al modelo.
-          messages: nuevos.filter((m, i) => !(i === 0 && m === SALUDO)),
+          messages: nuevos,
           leadId,
         }),
       });

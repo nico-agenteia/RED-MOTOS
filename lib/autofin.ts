@@ -7,7 +7,7 @@
 // Fase 1: CUOTA-TRINIDAD (POST) → cuota real + CAE + costo total.
 
 const BASE_URL =
-  process.env.AUTOFIN_BASE_URL ?? "https://fabdigital-qa.autofin.cl/autofin/api";
+  process.env.AUTOFIN_BASE_URL ?? "https://fabdigital02.autofin.cl/autofin/api";
 
 function requireEnv(nombre: string): string {
   const valor = process.env[nombre];
@@ -205,7 +205,7 @@ export async function obtenerOpcionesMoto(
     precioMax,
     iframe: {
       spiderUrl:
-        process.env.AUTOFIN_SPIDER_URL ?? "https://spiderqa.autofin.cl",
+        process.env.AUTOFIN_SPIDER_URL ?? "https://spider.autofin.cl",
       codSpider: cod,
       ...IFRAME_MOTO_DEFAULT,
     },

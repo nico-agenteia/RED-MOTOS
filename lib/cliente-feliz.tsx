@@ -87,7 +87,7 @@ export async function renderClienteFeliz({
         <div
           style={{
             position: "absolute",
-            top: 36,
+            top: 100,
             left: 0,
             width: W,
             display: "flex",
