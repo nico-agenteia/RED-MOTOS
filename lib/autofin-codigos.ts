@@ -31,13 +31,13 @@ export const MODELO_AUTOFIN: Record<string, number> = {
   "re-classic-350-goan": 10055, // GOAN CLASSIC 350
   "re-meteor-350-fireball": 10042, // METEOR 350 (FIREBALL)
   "re-meteor-350-stellar": 10043, // METEOR 350 (STELLAR)
-  "re-meteor-350-sundowner": 10011, // METEOR 350 (~ sin variante Sundowner)
+  "re-meteor-350-sundowner": 10058, // METEOR 350 (SUNDOWNER ORANGE)
   "re-grr-450": 10039, // GRR 450
   "re-himalayan-452": 10030, // HIMALAYAN 452
   "re-himalayan-452-tubular": 10054, // HIMALAYAN 452 TUBULAR
-  "re-himalayan-452-rally": 10030, // HIMALAYAN 452 (~ sin variante Rally)
+  "re-himalayan-452-rally": 10059, // HIMALAYAN 452 (RALLY)
   "re-classic-650": 10057, // CLASSIC 650
-  "re-classic-650-chrome": 10057, // CLASSIC 650 (~ sin variante Chrome)
+  "re-classic-650-chrome": 10060, // CLASSIC 650 (CHROME)
   "re-shotgun-650": 10023, // SHOTGUN 650
   "re-bear-650": 10032, // BEAR 650
   "re-super-meteor-650-astral": 10045, // SUPER METEOR 650 (ASTRAL)

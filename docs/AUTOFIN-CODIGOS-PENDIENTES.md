@@ -7,17 +7,17 @@ exactas** en el maestro de Autofin. Para esas usamos el **modelo base** (homolog
 igual; el detalle fino lo ajusta la tienda). Mapeo completo en
 [lib/autofin-codigos.ts](../lib/autofin-codigos.ts).
 
-## A. Sin variante exacta en Autofin (usan el modelo base)
+## A. Sin variante exacta en Autofin — ✅ RESUELTO (jun-2026)
 
-| Moto Red Motos | id | Código usado (base) | Qué preguntar a José |
-|---|---|---|---|
-| Meteor 350 (Sundowner Orange) | `re-meteor-350-sundowner` | 10011 `METEOR 350` | ¿Existe un CodModelo para la variante **Sundowner**? |
-| Himalayan 452 (Rally) | `re-himalayan-452-rally` | 10030 `HIMALAYAN 452` | ¿Existe un CodModelo para la variante **Rally**? |
-| Classic 650 (Chrome) | `re-classic-650-chrome` | 10057 `CLASSIC 650` | ¿Existe un CodModelo para la variante **Chrome**? |
+José Cumio creó los códigos exactos para las 3 variantes con precio distinto:
 
-> En el catálogo Royal Enfield sí hay variantes con color para Meteor 350
-> (Aurora/Fireball/Stellar/Supernova) y para Classic 350, pero **no** para
-> Sundowner, Rally ni Classic 650 Chrome.
+| Moto Red Motos | id | CodModelo asignado |
+|---|---|---|
+| Meteor 350 (Sundowner Orange) | `re-meteor-350-sundowner` | **10058** |
+| Himalayan 452 (Rally) | `re-himalayan-452-rally` | **10059** |
+| Classic 650 (Chrome) | `re-classic-650-chrome` | **10060** |
+
+Ya actualizados en `lib/autofin-codigos.ts`.
 
 ## B. Modelos con código duplicado en el catálogo (confirmar el preferido)
 
